@@ -108,3 +108,10 @@ func (s *Server) swipe(w http.ResponseWriter, r *http.Request) {
 		return nil, s.service.Swipe(&req)
 	})
 }
+
+func (s *Server) Start() error {
+	http.HandleFunc("/register", s.register)
+	http.HandleFunc("/login", s.login)
+	// TODO:
+	return http.ListenAndServe(":8080", nil)
+}
