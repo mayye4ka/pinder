@@ -17,7 +17,6 @@ func (r *Repository) CreateUser(phoneNumber, passHash string) (*models.User, err
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	// TODO: fill id for user
 	return &user, nil
 }
 
@@ -50,8 +49,18 @@ func (r *Repository) GetProfile(userID uint64) (*models.Profile, error) {
 	return &profile, nil
 }
 
-func (r *Repository) PutProfile(profile models.Profile) error {
-	res := r.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&profile)
+func (r *Repository) PutProfileData(profile models.Profile) error {
+	res := r.db.Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{
+		"name", "gender", "age", "bio", "location_lat", "location_lon", "location_name",
+	})}).Create(&profile)
+	return res.Error
+}
+
+func (r *Repository) PutProfilePhoto(userId uint64, photoKey string) error {
+	res := r.db.Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{"photo"})}).Create(&models.Profile{
+		UserID: userId,
+		Photo:  photoKey,
+	})
 	return res.Error
 }
 

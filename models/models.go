@@ -100,10 +100,13 @@ func (PairEvent) TableName() string {
 }
 
 func (p *Preferences) ProfileMatches(profile Profile) bool {
-	if p.Gender != profile.Gender {
+	if p.Gender != "" && p.Gender != profile.Gender {
 		return false
 	}
-	if p.MinAge > profile.Age || p.MaxAge < profile.Age {
+	if p.MinAge != 0 && p.MinAge > profile.Age {
+		return false
+	}
+	if p.MaxAge != 0 && p.MaxAge < profile.Age {
 		return false
 	}
 	_, dst, err := geodist.VincentyDistance(geodist.Coord{

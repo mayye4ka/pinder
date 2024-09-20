@@ -1,11 +1,12 @@
 package service
 
 import (
+	"context"
 	"pinder/models"
 	"pinder/server"
 )
 
-func (s *Service) NextPartner(req *server.RequestWithToken) (*server.NextPartnerResponse, error) {
+func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken) (*server.NextPartnerResponse, error) {
 	userId, err := verifyToken(req.Token)
 	if err != nil {
 		return nil, err
@@ -44,12 +45,16 @@ func (s *Service) NextPartner(req *server.RequestWithToken) (*server.NextPartner
 	if err != nil {
 		return nil, err
 	}
+	candidate.Photo, err = s.filestorage.MakeLink(ctx, candidate.Photo)
+	if err != nil {
+		return nil, err
+	}
 	return &server.NextPartnerResponse{
 		Partner: unmapProfile(*candidate),
 	}, nil
 }
 
-func (s *Service) Swipe(req *server.SwipeRequest) error {
+func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
 	userId, err := verifyToken(req.Token)
 	if err != nil {
 		return err

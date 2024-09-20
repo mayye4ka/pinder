@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -52,7 +53,7 @@ func verifyToken(token string) (uint64, error) {
 	return uint64(id), nil
 }
 
-func (s *Service) RegisterUser(req *server.RegisterRequest) (*server.RegisterResponse, error) {
+func (s *Service) RegisterUser(ctx context.Context, req *server.RegisterRequest) (*server.RegisterResponse, error) {
 	passHash := getPassHash(req.Password)
 	user, err := s.repository.CreateUser(req.PhoneNumber, passHash)
 	if err != nil {
@@ -65,7 +66,7 @@ func (s *Service) RegisterUser(req *server.RegisterRequest) (*server.RegisterRes
 	return &server.RegisterResponse{Token: token}, nil
 }
 
-func (s *Service) LoginUser(req *server.LoginRequest) (*server.LoginResponse, error) {
+func (s *Service) LoginUser(ctx context.Context, req *server.LoginRequest) (*server.LoginResponse, error) {
 	passHash := getPassHash(req.Password)
 	user, err := s.repository.GetUserByCreds(req.PhoneNumber, passHash)
 	if err != nil {

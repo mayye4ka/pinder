@@ -3,17 +3,37 @@ package main
 import (
 	"database/sql"
 	"log"
+	"os"
+	"pinder/file_storage"
 	"pinder/repository"
 	"pinder/server"
 	"pinder/service"
 
+	"github.com/joho/godotenv"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	migrate "github.com/rubenv/sql-migrate"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
-	dbDsn := "pinder:Pinder_1234@tcp(192.168.3.42:3306)/pinder?charset=utf8mb4&parseTime=True&loc=Local"
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	minioClient, err := minio.New(os.Getenv("MINIO_ENDPOINT"), &minio.Options{
+		Creds:  credentials.NewStaticV4(os.Getenv("MINIO_AK"), os.Getenv("MINIO_SK"), ""),
+		Secure: false,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filestorage := file_storage.New(minioClient)
+
+	dbDsn := os.Getenv("DB_DSN")
 	migrations := &migrate.FileMigrationSource{
 		Dir: "migrations",
 	}
@@ -33,7 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 	repo := repository.New(db)
-	service := service.New(repo)
+	service := service.New(repo, filestorage)
 	server := server.New(service)
 	if err = server.Start(); err != nil {
 		log.Fatal(err)

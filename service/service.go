@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"pinder/models"
 )
 
 type Service struct {
-	repository Repository
+	repository  Repository
+	filestorage FileStorage
 }
 
 type Repository interface {
@@ -13,7 +15,8 @@ type Repository interface {
 	GetUserByCreds(phoneNumber, passHash string) (*models.User, error)
 	GetUser(id uint64) (*models.User, error)
 	GetProfile(uint64) (*models.Profile, error)
-	PutProfile(models.Profile) error
+	PutProfileData(models.Profile) error
+	PutProfilePhoto(userId uint64, photoKey string) error
 	GetPreferences(uint64) (*models.Preferences, error)
 	PutPreferences(models.Preferences) error
 
@@ -26,8 +29,15 @@ type Repository interface {
 	FinishPairAttempt(PAID uint64, PAState models.PAState) error
 }
 
-func New(repo Repository) *Service {
+type FileStorage interface {
+	SavePhoto(ctx context.Context, photo []byte) (string, error)
+	DelPhoto(ctx context.Context, photoKey string) error
+	MakeLink(ctx context.Context, photoKey string) (string, error)
+}
+
+func New(repo Repository, filestorage FileStorage) *Service {
 	return &Service{
-		repository: repo,
+		repository:  repo,
+		filestorage: filestorage,
 	}
 }
