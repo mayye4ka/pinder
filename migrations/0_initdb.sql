@@ -2,7 +2,7 @@
 CREATE TABLE users(
     id int NOT NULL AUTO_INCREMENT,
     phone_number varchar(40) NOT NULL,
-    pass_hash varchar(40) NOT NULL,
+    pass_hash varchar(512) NOT NULL,
     UNIQUE (phone_number),
     PRIMARY KEY(id)
 );
