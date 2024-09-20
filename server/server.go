@@ -144,6 +144,10 @@ func (s *Server) deleteProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "hello")
+}
+
 func (s *Server) Start() error {
 	http.HandleFunc("/register", s.register)
 	http.HandleFunc("/login", s.login)
@@ -157,5 +161,6 @@ func (s *Server) Start() error {
 
 	http.HandleFunc("/next_partner", s.nextPartner)
 	http.HandleFunc("/swipe", s.swipe)
+	http.HandleFunc("/", s.hello)
 	return http.ListenAndServe(":8080", nil)
 }
