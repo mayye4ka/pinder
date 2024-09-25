@@ -40,6 +40,11 @@ type UpdPreferencesRequest struct {
 	NewPreferences Preferences
 }
 
+type DelPhotoRequest struct {
+	Token    string
+	PhotoKey string
+}
+
 // main process
 
 type NextPartnerResponse struct {
@@ -65,7 +70,7 @@ type Profile struct {
 	Gender       Gender
 	Age          int
 	Bio          string
-	Photo        string
+	Photos       []string
 	LocationLat  float64
 	LocationLon  float64
 	LocationName string

@@ -6,6 +6,16 @@ import (
 	"pinder/server"
 )
 
+func (s *Service) submitNextPartner(ctx context.Context, candidate *models.Profile) (*server.NextPartnerResponse, error) {
+	links, err := s.getUserPhotoLinks(ctx, candidate.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &server.NextPartnerResponse{
+		Partner: unmapProfile(*candidate, links),
+	}, nil
+}
+
 func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken) (*server.NextPartnerResponse, error) {
 	userId, err := verifyToken(req.Token)
 	if err != nil {
@@ -17,9 +27,7 @@ func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken)
 		return nil, err
 	}
 	if candidate != nil {
-		return &server.NextPartnerResponse{
-			Partner: unmapProfile(*candidate),
-		}, nil
+		return s.submitNextPartner(ctx, candidate)
 	}
 
 	candidate, err = s.repository.GetWhoLikedMe(userId)
@@ -36,22 +44,14 @@ func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken)
 		if err != nil {
 			return nil, err
 		}
-		return &server.NextPartnerResponse{
-			Partner: unmapProfile(*candidate),
-		}, nil
+		return s.submitNextPartner(ctx, candidate)
 	}
 
 	candidate, err = s.repository.ChooseCandidateAndCreatePairAttempt(userId)
 	if err != nil {
 		return nil, err
 	}
-	candidate.Photo, err = s.filestorage.MakeLink(ctx, candidate.Photo)
-	if err != nil {
-		return nil, err
-	}
-	return &server.NextPartnerResponse{
-		Partner: unmapProfile(*candidate),
-	}, nil
+	return s.submitNextPartner(ctx, candidate)
 }
 
 func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {

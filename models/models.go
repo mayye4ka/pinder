@@ -30,7 +30,6 @@ type Profile struct {
 	Gender       Gender
 	Age          int
 	Bio          string
-	Photo        string
 	LocationLat  float64
 	LocationLon  float64
 	LocationName string
@@ -38,6 +37,15 @@ type Profile struct {
 
 func (Profile) TableName() string {
 	return "profiles"
+}
+
+type Photo struct {
+	UserID   uint64
+	PhotoKey string
+}
+
+func (Photo) TableName() string {
+	return "photos"
 }
 
 type Preferences struct {

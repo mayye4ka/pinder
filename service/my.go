@@ -23,7 +23,7 @@ func (s *Service) UpdProfile(ctx context.Context, req *server.UpdProfileRequest)
 	if mapped.Age == 0 || mapped.LocationLat == 0 || mapped.LocationLon == 0 {
 		return fmt.Errorf("bad profile")
 	}
-	return s.repository.PutProfileData(mapped)
+	return s.repository.PutProfile(mapped)
 }
 
 func (s *Service) GetProfile(ctx context.Context, req *server.RequestWithToken) (*server.GetProfileResponse, error) {
@@ -38,12 +38,12 @@ func (s *Service) GetProfile(ctx context.Context, req *server.RequestWithToken) 
 	if profile == nil {
 		return &server.GetProfileResponse{}, nil
 	}
-	profile.Photo, err = s.filestorage.MakeLink(ctx, profile.Photo)
+	photoLinks, err := s.getUserPhotoLinks(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
 	return &server.GetProfileResponse{
-		Profile: unmapProfile(*profile),
+		Profile: unmapProfile(*profile, photoLinks),
 	}, nil
 }
 
@@ -72,53 +72,4 @@ func (s *Service) GetPreferences(ctx context.Context, req *server.RequestWithTok
 	return &server.GetPreferencesResponse{
 		Preferences: unmapPreferences(*preferences),
 	}, nil
-}
-
-func (s *Service) UpdateProfilePhoto(ctx context.Context, token string, photoBytes []byte) error {
-	userId, err := verifyToken(token)
-	if err != nil {
-		return err
-	}
-	prof, err := s.repository.GetProfile(userId)
-	if err != nil {
-		return err
-	}
-	if prof.Photo != "" {
-		err = s.filestorage.DelPhoto(ctx, prof.Photo)
-		if err != nil {
-			return err
-		}
-	}
-	photoKey, err := s.filestorage.SavePhoto(ctx, photoBytes)
-	if err != nil {
-		return err
-	}
-	err = s.repository.PutProfilePhoto(userId, photoKey)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Service) DeleteProfilePhoto(ctx context.Context, token string) error {
-	userId, err := verifyToken(token)
-	if err != nil {
-		return err
-	}
-	prof, err := s.repository.GetProfile(userId)
-	if err != nil {
-		return err
-	}
-	if prof.Photo == "" {
-		return nil
-	}
-	err = s.filestorage.DelPhoto(ctx, prof.Photo)
-	if err != nil {
-		return err
-	}
-	err = s.repository.PutProfilePhoto(userId, "")
-	if err != nil {
-		return err
-	}
-	return nil
 }

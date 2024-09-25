@@ -53,7 +53,7 @@ func (r *Repository) ChooseCandidateAndCreatePairAttempt(userID uint64) (*models
 	if prof == nil || pref == nil {
 		return nil, fmt.Errorf("not ready for search")
 	}
-	cands, err := r.GetAllCandidates()
+	cands, err := r.getAllCandidates()
 	if err != nil {
 		return nil, err
 	}

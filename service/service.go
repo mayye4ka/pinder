@@ -15,8 +15,10 @@ type Repository interface {
 	GetUserByCreds(phoneNumber, passHash string) (*models.User, error)
 	GetUser(id uint64) (*models.User, error)
 	GetProfile(uint64) (*models.Profile, error)
-	PutProfileData(models.Profile) error
-	PutProfilePhoto(userId uint64, photoKey string) error
+	PutProfile(models.Profile) error
+	AddPhoto(userID uint64, photoKey string) error
+	GetUserPhotos(userID uint64) ([]string, error)
+	DeleteUserPhoto(userID uint64, photoKey string) error
 	GetPreferences(uint64) (*models.Preferences, error)
 	PutPreferences(models.Preferences) error
 

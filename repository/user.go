@@ -49,24 +49,14 @@ func (r *Repository) GetProfile(userID uint64) (*models.Profile, error) {
 	return &profile, nil
 }
 
-func (r *Repository) PutProfileData(profile models.Profile) error {
-	res := r.db.Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{
-		"name", "gender", "age", "bio", "location_lat", "location_lon", "location_name",
-	})}).Create(&profile)
-	return res.Error
-}
-
-func (r *Repository) PutProfilePhoto(userId uint64, photoKey string) error {
-	res := r.db.Clauses(clause.OnConflict{DoUpdates: clause.AssignmentColumns([]string{"photo"})}).Create(&models.Profile{
-		UserID: userId,
-		Photo:  photoKey,
-	})
+func (r *Repository) PutProfile(profile models.Profile) error {
+	res := r.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&profile)
 	return res.Error
 }
 
 func (r *Repository) GetPreferences(userID uint64) (*models.Preferences, error) {
 	var preferences models.Preferences
-	res := r.db.Model(&models.Preferences{}).Where("user_id=?", userID).First(&preferences)
+	res := r.db.Select(&models.Preferences{}).Where("user_id=?", userID).First(&preferences)
 	if res.Error != nil && errors.Is(res.Error, sql.ErrNoRows) {
 		return nil, nil
 	} else if res.Error != nil {
@@ -80,13 +70,35 @@ func (r *Repository) PutPreferences(preferences models.Preferences) error {
 	return res.Error
 }
 
+func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
+	res := r.db.Create(&models.Photo{
+		UserID:   userID,
+		PhotoKey: photoKey,
+	})
+	return res.Error
+}
+
+func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
+	var photos []string
+	res := r.db.Select("photo_key").Where("user_id = ?", userID).Find(photos)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return photos, nil
+}
+
+func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
+	res := r.db.Where("user_id = ? and photo_key = ?", userID, photoKey).Delete(&models.Photo{})
+	return res.Error
+}
+
 type Candidate struct {
 	ID          uint64
 	Profile     models.Profile
 	Preferences models.Preferences
 }
 
-func (r *Repository) GetAllCandidates() ([]Candidate, error) {
+func (r *Repository) getAllCandidates() ([]Candidate, error) {
 	var profiles []models.Profile
 	res := r.db.Model(&models.Profile{}).Find(&profiles)
 	if res.Error != nil {

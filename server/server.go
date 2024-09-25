@@ -20,8 +20,9 @@ type Service interface {
 	UpdProfile(ctx context.Context, req *UpdProfileRequest) error
 	GetPreferences(ctx context.Context, req *RequestWithToken) (*GetPreferencesResponse, error)
 	UpdPreferences(ctx context.Context, req *UpdPreferencesRequest) error
-	UpdateProfilePhoto(ctx context.Context, token string, photo []byte) error
-	DeleteProfilePhoto(ctx context.Context, token string) error
+
+	AddPhoto(ctx context.Context, token string, photo []byte) error
+	DeletePhoto(ctx context.Context, req *DelPhotoRequest) error
 
 	NextPartner(ctx context.Context, req *RequestWithToken) (*NextPartnerResponse, error)
 	Swipe(ctx context.Context, req *SwipeRequest) error
@@ -112,7 +113,7 @@ func (s *Server) swipe(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) updateProfilePhoto(w http.ResponseWriter, r *http.Request) {
+func (s *Server) addPhoto(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 * 1024 * 1024)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -126,7 +127,7 @@ func (s *Server) updateProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	}
 	photoBytes := []byte(r.Form["photo"][0])
 	token := r.Header.Get("token")
-	err = s.service.UpdateProfilePhoto(r.Context(), token, photoBytes)
+	err = s.service.AddPhoto(r.Context(), token, photoBytes)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
@@ -134,14 +135,11 @@ func (s *Server) updateProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) deleteProfilePhoto(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("token")
-	err := s.service.DeleteProfilePhoto(r.Context(), token)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+func (s *Server) deletePhoto(w http.ResponseWriter, r *http.Request) {
+	var req DelPhotoRequest
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return nil, s.service.DeletePhoto(r.Context(), &req)
+	})
 }
 
 func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
@@ -156,8 +154,8 @@ func (s *Server) Start() error {
 	http.HandleFunc("/get_preferences", s.getPreferences)
 	http.HandleFunc("/upd_profile", s.updProfile)
 	http.HandleFunc("/upd_preferences", s.updPreferences)
-	http.HandleFunc("/upd_photo", s.updateProfilePhoto)
-	http.HandleFunc("/del_photo", s.deleteProfilePhoto)
+	http.HandleFunc("/upd_photo", s.addPhoto)
+	http.HandleFunc("/del_photo", s.deletePhoto)
 
 	http.HandleFunc("/next_partner", s.nextPartner)
 	http.HandleFunc("/swipe", s.swipe)

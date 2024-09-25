@@ -22,7 +22,6 @@ func mapProfile(prof server.Profile) models.Profile {
 		Gender:       models.Gender(prof.Gender),
 		Age:          prof.Age,
 		Bio:          prof.Bio,
-		Photo:        prof.Photo,
 		LocationLat:  prof.LocationLat,
 		LocationLon:  prof.LocationLon,
 		LocationName: prof.LocationName,
@@ -40,13 +39,13 @@ func unmapPreferences(pref models.Preferences) server.Preferences {
 	}
 }
 
-func unmapProfile(prof models.Profile) server.Profile {
+func unmapProfile(prof models.Profile, photos []string) server.Profile {
 	return server.Profile{
 		Name:         prof.Name,
 		Gender:       server.Gender(prof.Gender),
 		Age:          prof.Age,
 		Bio:          prof.Bio,
-		Photo:        prof.Photo,
+		Photos:       photos,
 		LocationLat:  prof.LocationLat,
 		LocationLon:  prof.LocationLon,
 		LocationName: prof.LocationName,
