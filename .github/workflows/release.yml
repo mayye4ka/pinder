@@ -1,0 +1,33 @@
+name: Unit tests
+on:
+    push:
+        tags: ['*']
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.1'
+      - name: Install dependencies
+        run: go mod download
+      - name: Build
+        run: make build
+      - name: Test
+        run: make test
+  release-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate to ghcr
+        uses: docker/login-action@v1
+        with:
+            registry: ghcr.io
+            username: ${{github.actor}}
+            password: ${{secrets.GITHUB_TOKEN}}
+      - name: Build image
+        run: docker build --tag pinder:${{ github.ref_name }} .
+      - name: Push image
+        run: docker push ghcr.io/mayye4ka/pinder:${{ github.ref_name }}
