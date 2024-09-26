@@ -28,6 +28,6 @@ jobs:
             username: ${{github.actor}}
             password: ${{secrets.GITHUB_TOKEN}}
       - name: Build image
-        run: docker build --tag pinder:${{ github.ref_name }} .
+        run: docker build --tag ghcr.io/mayye4ka/pinder:${{ github.ref_name }} .
       - name: Push image
         run: docker push ghcr.io/mayye4ka/pinder:${{ github.ref_name }}
