@@ -85,7 +85,14 @@ func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
 		// notify user 2 that he was liked
 	} else {
 		// mb create chat and notify two users
-		return s.repository.FinishPairAttempt(pa.ID, models.PAStateMatch)
+		err = s.repository.FinishPairAttempt(pa.ID, models.PAStateMatch)
+		if err != nil {
+			return err
+		}
+		err = s.repository.CreateChat(pa.User1, pa.User2)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

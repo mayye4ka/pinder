@@ -51,3 +51,13 @@ func unmapProfile(prof models.Profile, photos []string) server.Profile {
 		LocationName: prof.LocationName,
 	}
 }
+
+func unmapContentType(content models.MsgContentType) server.MsgContentType {
+	if content == models.ContentPhoto {
+		return server.ContentPhoto
+	}
+	if content == models.ContentText {
+		return server.ContentText
+	}
+	return server.ContentVoice
+}

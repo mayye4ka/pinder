@@ -26,6 +26,9 @@ type Service interface {
 
 	NextPartner(ctx context.Context, req *RequestWithToken) (*NextPartnerResponse, error)
 	Swipe(ctx context.Context, req *SwipeRequest) error
+
+	ListChats(ctx context.Context, req *RequestWithToken) (*ListChatsResponse, error)
+	ListMessages(ctx context.Context, req *ListMessagesRequest) (*ListMessagesResponse, error)
 }
 
 func New(svc Service) *Server {
@@ -142,6 +145,20 @@ func (s *Server) deletePhoto(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) listChats(w http.ResponseWriter, r *http.Request) {
+	var req RequestWithToken
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return s.service.ListChats(r.Context(), &req)
+	})
+}
+
+func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
+	var req ListMessagesRequest
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return s.service.ListMessages(r.Context(), &req)
+	})
+}
+
 func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello")
 }
@@ -159,6 +176,10 @@ func (s *Server) Start() error {
 
 	http.HandleFunc("/next_partner", s.nextPartner)
 	http.HandleFunc("/swipe", s.swipe)
+
+	http.HandleFunc("/list_chats", s.listChats)
+	http.HandleFunc("/list_messages", s.listMessages)
+
 	http.HandleFunc("/", s.hello)
 	return http.ListenAndServe(":8080", nil)
 }

@@ -29,6 +29,12 @@ type Repository interface {
 	GetLatestPairAttempt(user1, user2 uint64) (models.PairAttempt, error)
 	GetPendingPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error)
 	FinishPairAttempt(PAID uint64, PAState models.PAState) error
+
+	CreateChat(user1, user2 uint64) error
+	GetChats(userID uint64) ([]models.Chat, error)
+	GetChat(id uint64) (models.Chat, error)
+	SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) error
+	GetMessages(chatID uint64) ([]models.Message, error)
 }
 
 type FileStorage interface {

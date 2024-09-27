@@ -142,6 +142,7 @@ func (s *ServiceTestSuite) TestSwipe_Second_Like() {
 	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: user2Id, User2: userId}, nil)
 	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser2Liked).Return(nil)
 	s.repoMock.EXPECT().FinishPairAttempt(uint64(1), models.PAStateMatch).Return(nil)
+	s.repoMock.EXPECT().CreateChat(user2Id, userId).Return(nil)
 
 	err := s.service.Swipe(testCtx, &server.SwipeRequest{
 		Token:        token,

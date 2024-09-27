@@ -69,6 +69,20 @@ func (mr *MockRepositoryMockRecorder) ChooseCandidateAndCreatePairAttempt(userID
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChooseCandidateAndCreatePairAttempt", reflect.TypeOf((*MockRepository)(nil).ChooseCandidateAndCreatePairAttempt), userID)
 }
 
+// CreateChat mocks base method.
+func (m *MockRepository) CreateChat(user1, user2 uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateChat", user1, user2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateChat indicates an expected call of CreateChat.
+func (mr *MockRepositoryMockRecorder) CreateChat(user1, user2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateChat", reflect.TypeOf((*MockRepository)(nil).CreateChat), user1, user2)
+}
+
 // CreateEvent mocks base method.
 func (m *MockRepository) CreateEvent(PAID uint64, eventType models.PEType) error {
 	m.ctrl.T.Helper()
@@ -126,6 +140,36 @@ func (mr *MockRepositoryMockRecorder) FinishPairAttempt(PAID, PAState any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPairAttempt", reflect.TypeOf((*MockRepository)(nil).FinishPairAttempt), PAID, PAState)
 }
 
+// GetChat mocks base method.
+func (m *MockRepository) GetChat(id uint64) (models.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChat", id)
+	ret0, _ := ret[0].(models.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChat indicates an expected call of GetChat.
+func (mr *MockRepositoryMockRecorder) GetChat(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChat", reflect.TypeOf((*MockRepository)(nil).GetChat), id)
+}
+
+// GetChats mocks base method.
+func (m *MockRepository) GetChats(userID uint64) ([]models.Chat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChats", userID)
+	ret0, _ := ret[0].([]models.Chat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChats indicates an expected call of GetChats.
+func (mr *MockRepositoryMockRecorder) GetChats(userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChats", reflect.TypeOf((*MockRepository)(nil).GetChats), userID)
+}
+
 // GetHangingPartner mocks base method.
 func (m *MockRepository) GetHangingPartner(userID uint64) (*models.Profile, error) {
 	m.ctrl.T.Helper()
@@ -154,6 +198,21 @@ func (m *MockRepository) GetLatestPairAttempt(user1, user2 uint64) (models.PairA
 func (mr *MockRepositoryMockRecorder) GetLatestPairAttempt(user1, user2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPairAttempt", reflect.TypeOf((*MockRepository)(nil).GetLatestPairAttempt), user1, user2)
+}
+
+// GetMessages mocks base method.
+func (m *MockRepository) GetMessages(chatID uint64) ([]models.Message, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMessages", chatID)
+	ret0, _ := ret[0].([]models.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMessages indicates an expected call of GetMessages.
+func (mr *MockRepositoryMockRecorder) GetMessages(chatID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessages", reflect.TypeOf((*MockRepository)(nil).GetMessages), chatID)
 }
 
 // GetPendingPairAttemptByUserPair mocks base method.
@@ -287,6 +346,20 @@ func (m *MockRepository) PutProfile(arg0 models.Profile) error {
 func (mr *MockRepositoryMockRecorder) PutProfile(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutProfile", reflect.TypeOf((*MockRepository)(nil).PutProfile), arg0)
+}
+
+// SendMessage mocks base method.
+func (m *MockRepository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", chatID, sender, contentType, payload)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendMessage indicates an expected call of SendMessage.
+func (mr *MockRepositoryMockRecorder) SendMessage(chatID, sender, contentType, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockRepository)(nil).SendMessage), chatID, sender, contentType, payload)
 }
 
 // MockFileStorage is a mock of FileStorage interface.

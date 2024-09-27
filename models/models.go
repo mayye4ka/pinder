@@ -133,3 +133,34 @@ func (p *Preferences) ProfileMatches(profile Profile) bool {
 	}
 	return true
 }
+
+type Chat struct {
+	ID    uint64
+	User1 uint64
+	User2 uint64
+}
+
+func (Chat) TableName() string {
+	return "chats"
+}
+
+type MsgContentType string
+
+const (
+	ContentText  MsgContentType = "text"
+	ContentPhoto MsgContentType = "photo"
+	ContentVoice MsgContentType = "voice"
+)
+
+type Message struct {
+	ID          uint64
+	ChatID      uint64
+	SenderID    uint64
+	ContentType MsgContentType
+	Payload     string
+	CreatedAt   time.Time
+}
+
+func (Message) TableName() string {
+	return "messages"
+}

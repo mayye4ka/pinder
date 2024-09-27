@@ -1,5 +1,9 @@
 package server
 
+import (
+	"time"
+)
+
 // auth
 
 type LoginRequest struct {
@@ -98,3 +102,40 @@ const (
 	SwipeLike    SwipeVerdict = "like"
 	SwipeDislike SwipeVerdict = "dislike"
 )
+
+//chat
+
+type Chat struct {
+	ChatID uint64
+	Name   string
+	Photo  string
+}
+
+type MsgContentType string
+
+const (
+	ContentText  MsgContentType = "text"
+	ContentPhoto MsgContentType = "photo"
+	ContentVoice MsgContentType = "voice"
+)
+
+type Message struct {
+	ID          uint64
+	SentByMe    bool
+	ContentType MsgContentType
+	Payload     string
+	CreatedAt   time.Time
+}
+
+type ListChatsResponse struct {
+	Chats []Chat
+}
+
+type ListMessagesRequest struct {
+	Token  string
+	ChatId uint64
+}
+
+type ListMessagesResponse struct {
+	Messages []Message
+}
