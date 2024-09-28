@@ -12,7 +12,7 @@ func (s *Service) getUserPhotoLinks(ctx context.Context, userId uint64) ([]strin
 	}
 	links := make([]string, len(photos))
 	for i, photo := range photos {
-		link, err := s.filestorage.MakeLink(ctx, photo)
+		link, err := s.filestorage.MakeProfilePhotoLink(ctx, photo)
 		if err != nil {
 			return nil, err
 		}
@@ -21,12 +21,12 @@ func (s *Service) getUserPhotoLinks(ctx context.Context, userId uint64) ([]strin
 	return links, nil
 }
 
-func (s *Service) AddPhoto(ctx context.Context, token string, photo []byte) error {
-	userId, err := verifyToken(token)
+func (s *Service) AddPhoto(ctx context.Context, req *server.AddPhotoRequest) error {
+	userId, err := verifyToken(req.Token)
 	if err != nil {
 		return err
 	}
-	key, err := s.filestorage.SavePhoto(ctx, photo)
+	key, err := s.filestorage.SaveProfilePhoto(ctx, []byte(req.Photo))
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (s *Service) DeletePhoto(ctx context.Context, req *server.DelPhotoRequest) 
 	if err != nil {
 		return err
 	}
-	err = s.filestorage.DelPhoto(ctx, req.PhotoKey)
+	err = s.filestorage.DelProfilePhoto(ctx, req.PhotoKey)
 	if err != nil {
 		return err
 	}

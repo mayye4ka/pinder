@@ -8,7 +8,7 @@ import (
 func (s *ServiceTestSuite) TestNextPartner_ReturnsHandingPartner() {
 	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return(photoKeys, nil)
 	for i, k := range photoKeys {
-		s.fsMock.EXPECT().MakeLink(testCtx, k).Return(photoLinks[i], nil)
+		s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, k).Return(photoLinks[i], nil)
 	}
 	s.repoMock.EXPECT().GetHangingPartner(userId).Return(&models.Profile{
 		UserID:       user2Id,
@@ -43,7 +43,7 @@ func (s *ServiceTestSuite) TestNextPartner_ReturnsWhoLikedMe() {
 
 	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return(photoKeys, nil)
 	for i, k := range photoKeys {
-		s.fsMock.EXPECT().MakeLink(testCtx, k).Return(photoLinks[i], nil)
+		s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, k).Return(photoLinks[i], nil)
 	}
 	s.repoMock.EXPECT().GetLatestPairAttempt(user2Id, userId).Return(models.PairAttempt{ID: 1}, nil)
 	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeSentToUser2).Return(nil)
@@ -81,7 +81,7 @@ func (s *ServiceTestSuite) TestNextPartner_ReturnsNewPair() {
 
 	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return(photoKeys, nil)
 	for i, k := range photoKeys {
-		s.fsMock.EXPECT().MakeLink(testCtx, k).Return(photoLinks[i], nil)
+		s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, k).Return(photoLinks[i], nil)
 	}
 	s.repoMock.EXPECT().ChooseCandidateAndCreatePairAttempt(userId).Return(&models.Profile{
 		UserID:       user2Id,

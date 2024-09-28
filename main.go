@@ -53,7 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 	repo := repository.New(db)
-	service := service.New(repo, filestorage)
+	service := service.New(repo, filestorage, nil) // TODO:
 	server := server.New(service)
 	if err = server.Start(); err != nil {
 		log.Fatal(err)

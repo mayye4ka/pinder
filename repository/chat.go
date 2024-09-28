@@ -32,7 +32,7 @@ func (r *Repository) GetChat(id uint64) (models.Chat, error) {
 	return chat, nil
 }
 
-func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) error {
+func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error) {
 	message := models.Message{
 		ChatID:      chatID,
 		SenderID:    sender,
@@ -41,7 +41,10 @@ func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgCo
 		CreatedAt:   time.Now(),
 	}
 	res := r.db.Create(&message)
-	return res.Error
+	if res.Error != nil {
+		return models.Message{}, res.Error
+	}
+	return message, nil
 }
 
 func (r *Repository) GetMessages(chatID uint64) ([]models.Message, error) {

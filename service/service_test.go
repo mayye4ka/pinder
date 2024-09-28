@@ -23,9 +23,10 @@ var (
 
 type ServiceTestSuite struct {
 	suite.Suite
-	repoMock *MockRepository
-	fsMock   *MockFileStorage
-	service  *Service
+	repoMock           *MockRepository
+	fsMock             *MockFileStorage
+	userInteractorMock *MockUserInteractor
+	service            *Service
 }
 
 func TestService(t *testing.T) {
@@ -36,5 +37,6 @@ func (s *ServiceTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.repoMock = NewMockRepository(ctrl)
 	s.fsMock = NewMockFileStorage(ctrl)
-	s.service = New(s.repoMock, s.fsMock)
+	s.userInteractorMock = NewMockUserInteractor(ctrl)
+	s.service = New(s.repoMock, s.fsMock, s.userInteractorMock)
 }

@@ -49,6 +49,11 @@ type DelPhotoRequest struct {
 	PhotoKey string
 }
 
+type AddPhotoRequest struct {
+	Token string
+	Photo string
+}
+
 // main process
 
 type NextPartnerResponse struct {
@@ -138,4 +143,11 @@ type ListMessagesRequest struct {
 
 type ListMessagesResponse struct {
 	Messages []Message
+}
+
+type SendMessageRequest struct {
+	Token       string
+	ChatID      uint64
+	ContentType MsgContentType
+	Payload     string
 }

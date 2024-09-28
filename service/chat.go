@@ -15,6 +15,24 @@ func getWhoIsNotMe(chat models.Chat, userId uint64) uint64 {
 	return chat.User1
 }
 
+func (s *Service) enrichMessageWithLinks(ctx context.Context, message *models.Message) error {
+	if message.ContentType == models.ContentPhoto {
+		link, err := s.filestorage.MakeChatPhotoLink(ctx, message.Payload)
+		if err != nil {
+			return err
+		}
+		message.Payload = link
+	}
+	if message.ContentType == models.ContentVoice {
+		link, err := s.filestorage.MakeChatVoiceLink(ctx, message.Payload)
+		if err != nil {
+			return err
+		}
+		message.Payload = link
+	}
+	return nil
+}
+
 func (s *Service) ListChats(ctx context.Context, req *server.RequestWithToken) (*server.ListChatsResponse, error) {
 	userID, err := verifyToken(req.Token)
 	if err != nil {
@@ -35,7 +53,7 @@ func (s *Service) ListChats(ctx context.Context, req *server.RequestWithToken) (
 		if err != nil {
 			return nil, err
 		}
-		link, err := s.filestorage.MakeLink(ctx, photos[0])
+		link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
 		if err != nil {
 			return nil, err
 		}
@@ -73,6 +91,10 @@ func (s *Service) ListMessages(ctx context.Context, req *server.ListMessagesRequ
 		if msg.SenderID != userID {
 			sentByMe = false
 		}
+		err = s.enrichMessageWithLinks(ctx, &msg)
+		if err != nil {
+			return nil, err
+		}
 		mappedMessages = append(mappedMessages, server.Message{
 			ID:          msg.ID,
 			SentByMe:    sentByMe,
@@ -84,4 +106,42 @@ func (s *Service) ListMessages(ctx context.Context, req *server.ListMessagesRequ
 	return &server.ListMessagesResponse{
 		Messages: mappedMessages,
 	}, nil
+}
+
+func (s *Service) SendMessage(ctx context.Context, req *server.SendMessageRequest) error {
+	userID, err := verifyToken(req.Token)
+	if err != nil {
+		return err
+	}
+	chat, err := s.repository.GetChat(req.ChatID)
+	if err != nil {
+		return err
+	}
+	if chat.User1 != userID && chat.User2 != userID {
+		return errors.New("access denied")
+	}
+	payload := req.Payload
+	if req.ContentType == server.ContentVoice {
+		key, err := s.filestorage.SaveChatVoice(ctx, []byte(req.Payload))
+		if err != nil {
+			return nil
+		}
+		payload = key
+	} else if req.ContentType == server.ContentPhoto {
+		key, err := s.filestorage.SaveChatPhoto(ctx, []byte(req.Payload))
+		if err != nil {
+			return nil
+		}
+		payload = key
+	}
+	msg, err := s.repository.SendMessage(req.ChatID, userID, mapContentType(req.ContentType), payload)
+	if err != nil {
+		return err
+	}
+	err = s.enrichMessageWithLinks(ctx, &msg)
+	if err != nil {
+		return err
+	}
+	s.userInteractor.SendMessage(chat, msg)
+	return nil
 }

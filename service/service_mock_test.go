@@ -349,11 +349,12 @@ func (mr *MockRepositoryMockRecorder) PutProfile(arg0 any) *gomock.Call {
 }
 
 // SendMessage mocks base method.
-func (m *MockRepository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) error {
+func (m *MockRepository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMessage", chatID, sender, contentType, payload)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(models.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SendMessage indicates an expected call of SendMessage.
@@ -385,46 +386,141 @@ func (m *MockFileStorage) EXPECT() *MockFileStorageMockRecorder {
 	return m.recorder
 }
 
-// DelPhoto mocks base method.
-func (m *MockFileStorage) DelPhoto(ctx context.Context, photoKey string) error {
+// DelProfilePhoto mocks base method.
+func (m *MockFileStorage) DelProfilePhoto(ctx context.Context, photoKey string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DelPhoto", ctx, photoKey)
+	ret := m.ctrl.Call(m, "DelProfilePhoto", ctx, photoKey)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DelPhoto indicates an expected call of DelPhoto.
-func (mr *MockFileStorageMockRecorder) DelPhoto(ctx, photoKey any) *gomock.Call {
+// DelProfilePhoto indicates an expected call of DelProfilePhoto.
+func (mr *MockFileStorageMockRecorder) DelProfilePhoto(ctx, photoKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelPhoto", reflect.TypeOf((*MockFileStorage)(nil).DelPhoto), ctx, photoKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelProfilePhoto", reflect.TypeOf((*MockFileStorage)(nil).DelProfilePhoto), ctx, photoKey)
 }
 
-// MakeLink mocks base method.
-func (m *MockFileStorage) MakeLink(ctx context.Context, photoKey string) (string, error) {
+// MakeChatPhotoLink mocks base method.
+func (m *MockFileStorage) MakeChatPhotoLink(ctx context.Context, key string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MakeLink", ctx, photoKey)
+	ret := m.ctrl.Call(m, "MakeChatPhotoLink", ctx, key)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// MakeLink indicates an expected call of MakeLink.
-func (mr *MockFileStorageMockRecorder) MakeLink(ctx, photoKey any) *gomock.Call {
+// MakeChatPhotoLink indicates an expected call of MakeChatPhotoLink.
+func (mr *MockFileStorageMockRecorder) MakeChatPhotoLink(ctx, key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeLink", reflect.TypeOf((*MockFileStorage)(nil).MakeLink), ctx, photoKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeChatPhotoLink", reflect.TypeOf((*MockFileStorage)(nil).MakeChatPhotoLink), ctx, key)
 }
 
-// SavePhoto mocks base method.
-func (m *MockFileStorage) SavePhoto(ctx context.Context, photo []byte) (string, error) {
+// MakeChatVoiceLink mocks base method.
+func (m *MockFileStorage) MakeChatVoiceLink(ctx context.Context, key string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SavePhoto", ctx, photo)
+	ret := m.ctrl.Call(m, "MakeChatVoiceLink", ctx, key)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SavePhoto indicates an expected call of SavePhoto.
-func (mr *MockFileStorageMockRecorder) SavePhoto(ctx, photo any) *gomock.Call {
+// MakeChatVoiceLink indicates an expected call of MakeChatVoiceLink.
+func (mr *MockFileStorageMockRecorder) MakeChatVoiceLink(ctx, key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePhoto", reflect.TypeOf((*MockFileStorage)(nil).SavePhoto), ctx, photo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeChatVoiceLink", reflect.TypeOf((*MockFileStorage)(nil).MakeChatVoiceLink), ctx, key)
+}
+
+// MakeProfilePhotoLink mocks base method.
+func (m *MockFileStorage) MakeProfilePhotoLink(ctx context.Context, photoKey string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MakeProfilePhotoLink", ctx, photoKey)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MakeProfilePhotoLink indicates an expected call of MakeProfilePhotoLink.
+func (mr *MockFileStorageMockRecorder) MakeProfilePhotoLink(ctx, photoKey any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeProfilePhotoLink", reflect.TypeOf((*MockFileStorage)(nil).MakeProfilePhotoLink), ctx, photoKey)
+}
+
+// SaveChatPhoto mocks base method.
+func (m *MockFileStorage) SaveChatPhoto(ctx context.Context, paylaod []byte) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveChatPhoto", ctx, paylaod)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SaveChatPhoto indicates an expected call of SaveChatPhoto.
+func (mr *MockFileStorageMockRecorder) SaveChatPhoto(ctx, paylaod any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChatPhoto", reflect.TypeOf((*MockFileStorage)(nil).SaveChatPhoto), ctx, paylaod)
+}
+
+// SaveChatVoice mocks base method.
+func (m *MockFileStorage) SaveChatVoice(ctx context.Context, payload []byte) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveChatVoice", ctx, payload)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SaveChatVoice indicates an expected call of SaveChatVoice.
+func (mr *MockFileStorageMockRecorder) SaveChatVoice(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChatVoice", reflect.TypeOf((*MockFileStorage)(nil).SaveChatVoice), ctx, payload)
+}
+
+// SaveProfilePhoto mocks base method.
+func (m *MockFileStorage) SaveProfilePhoto(ctx context.Context, photo []byte) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveProfilePhoto", ctx, photo)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SaveProfilePhoto indicates an expected call of SaveProfilePhoto.
+func (mr *MockFileStorageMockRecorder) SaveProfilePhoto(ctx, photo any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProfilePhoto", reflect.TypeOf((*MockFileStorage)(nil).SaveProfilePhoto), ctx, photo)
+}
+
+// MockUserInteractor is a mock of UserInteractor interface.
+type MockUserInteractor struct {
+	ctrl     *gomock.Controller
+	recorder *MockUserInteractorMockRecorder
+}
+
+// MockUserInteractorMockRecorder is the mock recorder for MockUserInteractor.
+type MockUserInteractorMockRecorder struct {
+	mock *MockUserInteractor
+}
+
+// NewMockUserInteractor creates a new mock instance.
+func NewMockUserInteractor(ctrl *gomock.Controller) *MockUserInteractor {
+	mock := &MockUserInteractor{ctrl: ctrl}
+	mock.recorder = &MockUserInteractorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockUserInteractor) EXPECT() *MockUserInteractorMockRecorder {
+	return m.recorder
+}
+
+// SendMessage mocks base method.
+func (m *MockUserInteractor) SendMessage(chat models.Chat, message models.Message) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendMessage", chat, message)
+}
+
+// SendMessage indicates an expected call of SendMessage.
+func (mr *MockUserInteractorMockRecorder) SendMessage(chat, message any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockUserInteractor)(nil).SendMessage), chat, message)
 }

@@ -21,7 +21,7 @@ type Service interface {
 	GetPreferences(ctx context.Context, req *RequestWithToken) (*GetPreferencesResponse, error)
 	UpdPreferences(ctx context.Context, req *UpdPreferencesRequest) error
 
-	AddPhoto(ctx context.Context, token string, photo []byte) error
+	AddPhoto(ctx context.Context, req *AddPhotoRequest) error
 	DeletePhoto(ctx context.Context, req *DelPhotoRequest) error
 
 	NextPartner(ctx context.Context, req *RequestWithToken) (*NextPartnerResponse, error)
@@ -29,6 +29,7 @@ type Service interface {
 
 	ListChats(ctx context.Context, req *RequestWithToken) (*ListChatsResponse, error)
 	ListMessages(ctx context.Context, req *ListMessagesRequest) (*ListMessagesResponse, error)
+	SendMessage(ctx context.Context, req *SendMessageRequest) error
 }
 
 func New(svc Service) *Server {
@@ -117,25 +118,10 @@ func (s *Server) swipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) addPhoto(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(10 * 1024 * 1024)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-	if len(r.Form["photo"]) != 1 || len(r.Form["photo"][0]) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "bad/no photo provided")
-		return
-	}
-	photoBytes := []byte(r.Form["photo"][0])
-	token := r.Header.Get("token")
-	err = s.service.AddPhoto(r.Context(), token, photoBytes)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	var req AddPhotoRequest
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return nil, s.service.AddPhoto(r.Context(), &req)
+	})
 }
 
 func (s *Server) deletePhoto(w http.ResponseWriter, r *http.Request) {
@@ -159,6 +145,13 @@ func (s *Server) listMessages(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) sendMessage(w http.ResponseWriter, r *http.Request) {
+	var req SendMessageRequest
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return nil, s.service.SendMessage(r.Context(), &req)
+	})
+}
+
 func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello")
 }
@@ -179,6 +172,7 @@ func (s *Server) Start() error {
 
 	http.HandleFunc("/list_chats", s.listChats)
 	http.HandleFunc("/list_messages", s.listMessages)
+	http.HandleFunc("/send_message", s.sendMessage)
 
 	http.HandleFunc("/", s.hello)
 	return http.ListenAndServe(":8080", nil)

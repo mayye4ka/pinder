@@ -61,3 +61,13 @@ func unmapContentType(content models.MsgContentType) server.MsgContentType {
 	}
 	return server.ContentVoice
 }
+
+func mapContentType(content server.MsgContentType) models.MsgContentType {
+	if content == server.ContentPhoto {
+		return models.ContentPhoto
+	}
+	if content == server.ContentText {
+		return models.ContentText
+	}
+	return models.ContentVoice
+}

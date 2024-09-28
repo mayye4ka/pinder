@@ -6,8 +6,9 @@ import (
 )
 
 type Service struct {
-	repository  Repository
-	filestorage FileStorage
+	repository     Repository
+	filestorage    FileStorage
+	userInteractor UserInteractor
 }
 
 type Repository interface {
@@ -33,19 +34,30 @@ type Repository interface {
 	CreateChat(user1, user2 uint64) error
 	GetChats(userID uint64) ([]models.Chat, error)
 	GetChat(id uint64) (models.Chat, error)
-	SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) error
+	SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error)
 	GetMessages(chatID uint64) ([]models.Message, error)
 }
 
 type FileStorage interface {
-	SavePhoto(ctx context.Context, photo []byte) (string, error)
-	DelPhoto(ctx context.Context, photoKey string) error
-	MakeLink(ctx context.Context, photoKey string) (string, error)
+	SaveProfilePhoto(ctx context.Context, photo []byte) (string, error)
+	DelProfilePhoto(ctx context.Context, photoKey string) error
+	MakeProfilePhotoLink(ctx context.Context, photoKey string) (string, error)
+
+	MakeChatPhotoLink(ctx context.Context, key string) (string, error)
+	SaveChatPhoto(ctx context.Context, paylaod []byte) (string, error)
+
+	MakeChatVoiceLink(ctx context.Context, key string) (string, error)
+	SaveChatVoice(ctx context.Context, payload []byte) (string, error)
 }
 
-func New(repo Repository, filestorage FileStorage) *Service {
+type UserInteractor interface {
+	SendMessage(chat models.Chat, message models.Message)
+}
+
+func New(repo Repository, filestorage FileStorage, userInteractor UserInteractor) *Service {
 	return &Service{
-		repository:  repo,
-		filestorage: filestorage,
+		repository:     repo,
+		filestorage:    filestorage,
+		userInteractor: userInteractor,
 	}
 }
