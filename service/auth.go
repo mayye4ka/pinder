@@ -78,3 +78,13 @@ func (s *Service) LoginUser(ctx context.Context, req *server.LoginRequest) (*ser
 	}
 	return &server.LoginResponse{Token: token}, nil
 }
+
+func (s *Service) GetUserId(ctx context.Context, req *server.RequestWithToken) (*server.GetUserIdResponse, error) {
+	userId, err := verifyToken(req.Token)
+	if err != nil {
+		return nil, err
+	}
+	return &server.GetUserIdResponse{
+		ID: userId,
+	}, nil
+}

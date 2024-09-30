@@ -513,10 +513,40 @@ func (m *MockUserInteractor) EXPECT() *MockUserInteractorMockRecorder {
 	return m.recorder
 }
 
-// SendMessage mocks base method.
-func (m *MockUserInteractor) SendMessage(chat models.Chat, message models.Message) {
+// NotifyLiked mocks base method.
+func (m *MockUserInteractor) NotifyLiked(userId uint64, opName, opPhoto string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SendMessage", chat, message)
+	ret := m.ctrl.Call(m, "NotifyLiked", userId, opName, opPhoto)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NotifyLiked indicates an expected call of NotifyLiked.
+func (mr *MockUserInteractorMockRecorder) NotifyLiked(userId, opName, opPhoto any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyLiked", reflect.TypeOf((*MockUserInteractor)(nil).NotifyLiked), userId, opName, opPhoto)
+}
+
+// NotifyMatch mocks base method.
+func (m *MockUserInteractor) NotifyMatch(userId uint64, opName, opPhoto string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NotifyMatch", userId, opName, opPhoto)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NotifyMatch indicates an expected call of NotifyMatch.
+func (mr *MockUserInteractorMockRecorder) NotifyMatch(userId, opName, opPhoto any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyMatch", reflect.TypeOf((*MockUserInteractor)(nil).NotifyMatch), userId, opName, opPhoto)
+}
+
+// SendMessage mocks base method.
+func (m *MockUserInteractor) SendMessage(chat models.Chat, message models.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", chat, message)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // SendMessage indicates an expected call of SendMessage.

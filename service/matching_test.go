@@ -114,6 +114,10 @@ func (s *ServiceTestSuite) TestNextPartner_ReturnsNewPair() {
 func (s *ServiceTestSuite) TestSwipe_First_Like() {
 	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: userId, User2: user2Id}, nil)
 	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser1Liked).Return(nil)
+	s.repoMock.EXPECT().GetProfile(userId).Return(&models.Profile{UserID: userId, Name: userName}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(userId).Return(photoKeys, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, photoKeys[0]).Return(photoLinks[0], nil)
+	s.userInteractorMock.EXPECT().NotifyLiked(user2Id, userName, photoLinks[0]).Return(nil)
 
 	err := s.service.Swipe(testCtx, &server.SwipeRequest{
 		Token:        token,
@@ -143,6 +147,16 @@ func (s *ServiceTestSuite) TestSwipe_Second_Like() {
 	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser2Liked).Return(nil)
 	s.repoMock.EXPECT().FinishPairAttempt(uint64(1), models.PAStateMatch).Return(nil)
 	s.repoMock.EXPECT().CreateChat(user2Id, userId).Return(nil)
+
+	s.repoMock.EXPECT().GetProfile(userId).Return(&models.Profile{UserID: userId, Name: userName}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(userId).Return(photoKeys, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, photoKeys[0]).Return(photoLinks[0], nil)
+	s.userInteractorMock.EXPECT().NotifyMatch(userId, userName, photoLinks[0]).Return(nil)
+
+	s.repoMock.EXPECT().GetProfile(user2Id).Return(&models.Profile{UserID: user2Id, Name: userName}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return(photoKeys, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(testCtx, photoKeys[0]).Return(photoLinks[0], nil)
+	s.userInteractorMock.EXPECT().NotifyMatch(user2Id, userName, photoLinks[0]).Return(nil)
 
 	err := s.service.Swipe(testCtx, &server.SwipeRequest{
 		Token:        token,

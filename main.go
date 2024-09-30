@@ -8,6 +8,7 @@ import (
 	"pinder/repository"
 	"pinder/server"
 	"pinder/service"
+	"pinder/websocket"
 
 	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
@@ -53,8 +54,9 @@ func main() {
 		log.Fatal(err)
 	}
 	repo := repository.New(db)
-	service := service.New(repo, filestorage, nil) // TODO:
-	server := server.New(service)
+	userInteractor := websocket.NewUserInteractor()
+	service := service.New(repo, filestorage, userInteractor)
+	server := server.New(service, userInteractor)
 	if err = server.Start(); err != nil {
 		log.Fatal(err)
 	}

@@ -82,9 +82,15 @@ func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
 		return s.repository.FinishPairAttempt(pa.ID, models.PAStateMismatch)
 	}
 	if pa.User1 == userId {
-		// notify user 2 that he was liked
+		err = s.notifyLikedUser(ctx, userId, pa.User2)
+		if err != nil {
+			return err
+		}
 	} else {
-		// mb create chat and notify two users
+		err = s.notifyMatch(ctx, pa.User1, pa.User2)
+		if err != nil {
+			return err
+		}
 		err = s.repository.FinishPairAttempt(pa.ID, models.PAStateMatch)
 		if err != nil {
 			return err
@@ -93,6 +99,54 @@ func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (s *Service) notifyLikedUser(ctx context.Context, whoLiked, whomLiked uint64) error {
+	prof, err := s.repository.GetProfile(whoLiked)
+	if err != nil {
+		return err
+	}
+	photos, err := s.repository.GetUserPhotos(whoLiked)
+	if err != nil {
+		return err
+	}
+	link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
+	if err != nil {
+		return err
+	}
+	err = s.userInteractor.NotifyLiked(whomLiked, prof.Name, link)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) notifyMatch(ctx context.Context, user1, user2 uint64) error {
+	err := s.oneDirectionalNotifyMatch(ctx, user1, user2)
+	if err != nil {
+		return err
+	}
+	return s.oneDirectionalNotifyMatch(ctx, user2, user1)
+}
+
+func (s *Service) oneDirectionalNotifyMatch(ctx context.Context, sender, receiver uint64) error {
+	prof, err := s.repository.GetProfile(sender)
+	if err != nil {
+		return err
+	}
+	photos, err := s.repository.GetUserPhotos(sender)
+	if err != nil {
+		return err
+	}
+	link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
+	if err != nil {
+		return err
+	}
+	err = s.userInteractor.NotifyMatch(receiver, prof.Name, link)
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -24,6 +24,10 @@ type RegisterResponse struct {
 	Token string
 }
 
+type GetUserIdResponse struct {
+	ID uint64
+}
+
 // my
 
 type GetProfileResponse struct {

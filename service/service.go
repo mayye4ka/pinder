@@ -51,7 +51,9 @@ type FileStorage interface {
 }
 
 type UserInteractor interface {
-	SendMessage(chat models.Chat, message models.Message)
+	SendMessage(chat models.Chat, message models.Message) error
+	NotifyLiked(userId uint64, opName, opPhoto string) error
+	NotifyMatch(userId uint64, opName, opPhoto string) error
 }
 
 func New(repo Repository, filestorage FileStorage, userInteractor UserInteractor) *Service {

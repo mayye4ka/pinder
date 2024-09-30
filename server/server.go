@@ -6,15 +6,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 type Server struct {
-	service Service
+	service        Service
+	userInteractor UserInteractor
 }
 
 type Service interface {
 	RegisterUser(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error)
 	LoginUser(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
+	GetUserId(ctx context.Context, req *RequestWithToken) (*GetUserIdResponse, error)
 
 	GetProfile(ctx context.Context, req *RequestWithToken) (*GetProfileResponse, error)
 	UpdProfile(ctx context.Context, req *UpdProfileRequest) error
@@ -32,9 +36,14 @@ type Service interface {
 	SendMessage(ctx context.Context, req *SendMessageRequest) error
 }
 
-func New(svc Service) *Server {
+type UserInteractor interface {
+	AddUser(userId uint64, conn *websocket.Conn)
+}
+
+func New(svc Service, userInteractor UserInteractor) *Server {
 	return &Server{
-		service: svc,
+		service:        svc,
+		userInteractor: userInteractor,
 	}
 }
 
@@ -73,6 +82,13 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	s.commonHandler(w, r, &req, func() (any, error) {
 		return s.service.LoginUser(r.Context(), &req)
+	})
+}
+
+func (s *Server) getUserId(w http.ResponseWriter, r *http.Request) {
+	var req RequestWithToken
+	s.commonHandler(w, r, &req, func() (any, error) {
+		return s.service.GetUserId(r.Context(), &req)
 	})
 }
 
@@ -152,6 +168,35 @@ func (s *Server) sendMessage(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+var upgrader = websocket.Upgrader{}
+
+func (s *Server) websocket(w http.ResponseWriter, r *http.Request) {
+	var req RequestWithToken
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	resp, err := s.service.GetUserId(r.Context(), &req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	if resp == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	s.userInteractor.AddUser(resp.ID, conn)
+}
+
 func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "hello")
 }
@@ -159,6 +204,7 @@ func (s *Server) hello(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Start() error {
 	http.HandleFunc("/register", s.register)
 	http.HandleFunc("/login", s.login)
+	http.HandleFunc("/get_user_id", s.getUserId)
 
 	http.HandleFunc("/get_profile", s.getProfile)
 	http.HandleFunc("/get_preferences", s.getPreferences)
@@ -173,6 +219,8 @@ func (s *Server) Start() error {
 	http.HandleFunc("/list_chats", s.listChats)
 	http.HandleFunc("/list_messages", s.listMessages)
 	http.HandleFunc("/send_message", s.sendMessage)
+
+	http.HandleFunc("/websocket", s.websocket)
 
 	http.HandleFunc("/", s.hello)
 	return http.ListenAndServe(":8080", nil)

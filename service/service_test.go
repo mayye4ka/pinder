@@ -16,6 +16,7 @@ var (
 	password    = "SuperMegaPassword123"
 	passHash    = "a8630ec77eb54401e672f6fbb46c67304d02b9b747399b27f67e463b6878d7bb"
 	token       = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMjN9.vp68JTvxUceGTgtbZfHHato2w2Hjzuuv-Ne-Ts3kwcY"
+	userName    = "name"
 
 	photoKeys  = []string{"ph1", "ph2"}
 	photoLinks = []string{"link1", "link2"}
