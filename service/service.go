@@ -2,25 +2,33 @@ package service
 
 import (
 	"context"
-	"pinder/models"
+	"errors"
+
+	"github.com/mayye4ka/pinder/models"
+)
+
+const userIdContextKey = "user_id"
+
+var (
+	errUnauthenticated  = errors.New("unauthenticated")
+	errPermissionDenied = errors.New("permission denied")
 )
 
 type Service struct {
-	repository     Repository
-	filestorage    FileStorage
-	userInteractor UserInteractor
+	repository   Repository
+	filestorage  FileStorage
+	userNotifier UserNotifier
+	stt          Stt
 }
 
 type Repository interface {
-	CreateUser(phoneNumber, passHash string) (*models.User, error)
-	GetUserByCreds(phoneNumber, passHash string) (*models.User, error)
-	GetUser(id uint64) (*models.User, error)
-	GetProfile(uint64) (*models.Profile, error)
+	GetUser(id uint64) (models.User, error)
+	GetProfile(uint64) (models.Profile, error)
 	PutProfile(models.Profile) error
 	AddPhoto(userID uint64, photoKey string) error
 	GetUserPhotos(userID uint64) ([]string, error)
 	DeleteUserPhoto(userID uint64, photoKey string) error
-	GetPreferences(uint64) (*models.Preferences, error)
+	GetPreferences(uint64) (models.Preferences, error)
 	PutPreferences(models.Preferences) error
 
 	GetHangingPartner(userID uint64) (*models.Profile, error)
@@ -36,6 +44,10 @@ type Repository interface {
 	GetChat(id uint64) (models.Chat, error)
 	SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error)
 	GetMessages(chatID uint64) ([]models.Message, error)
+	GetMessage(msgID uint64) (models.Message, error)
+
+	GetMessageTranscription(id uint64) (string, bool, error)
+	SaveMessageTranscription(id uint64, text string) error
 }
 
 type FileStorage interface {
@@ -48,18 +60,26 @@ type FileStorage interface {
 
 	MakeChatVoiceLink(ctx context.Context, key string) (string, error)
 	SaveChatVoice(ctx context.Context, payload []byte) (string, error)
+	GetChatVoice(ctx context.Context, key string) (string, error)
 }
 
-type UserInteractor interface {
-	SendMessage(chat models.Chat, message models.Message) error
-	NotifyLiked(userId uint64, opName, opPhoto string) error
-	NotifyMatch(userId uint64, opName, opPhoto string) error
+type UserNotifier interface {
+	NotifyMatch(userId uint64, notification models.MatchNotification) error
+	NotifyLiked(userId uint64, notification models.LikeNotification) error
+	SendMessage(userId uint64, notification models.MessageSend) error
+	SendTranscribedMessage(userId uint64, notification models.MessageTranscibed) error
 }
 
-func New(repo Repository, filestorage FileStorage, userInteractor UserInteractor) *Service {
+type Stt interface {
+	PutTask(task models.SttTask) error
+	ResultsChan() <-chan models.SttResult
+}
+
+func New(repo Repository, filestorage FileStorage, userNotifier UserNotifier, stt Stt) *Service {
 	return &Service{
-		repository:     repo,
-		filestorage:    filestorage,
-		userInteractor: userInteractor,
+		repository:   repo,
+		filestorage:  filestorage,
+		userNotifier: userNotifier,
+		stt:          stt,
 	}
 }

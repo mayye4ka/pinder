@@ -3,73 +3,64 @@ package service
 import (
 	"context"
 	"fmt"
-	"pinder/models"
-	"pinder/server"
+
+	"github.com/mayye4ka/pinder/models"
 )
 
-func (s *Service) UpdProfile(ctx context.Context, req *server.UpdProfileRequest) error {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return err
+func (s *Service) UpdProfile(ctx context.Context, newProfile models.Profile) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
 	}
-	mapped := mapProfile(req.NewProfile)
-	mapped.UserID = userId
-	if mapped.Gender != models.GenderFemale && mapped.Gender != models.GenderMale {
+	newProfile.UserID = userId
+	if newProfile.Gender != models.GenderFemale && newProfile.Gender != models.GenderMale {
 		return fmt.Errorf("bad profile")
 	}
-	if mapped.LocationName == "" || mapped.Name == "" {
+	if newProfile.LocationName == "" || newProfile.Name == "" {
 		return fmt.Errorf("bad profile")
 	}
-	if mapped.Age == 0 || mapped.LocationLat == 0 || mapped.LocationLon == 0 {
+	if newProfile.Age == 0 || newProfile.LocationLat == 0 || newProfile.LocationLon == 0 {
 		return fmt.Errorf("bad profile")
 	}
-	return s.repository.PutProfile(mapped)
+	return s.repository.PutProfile(newProfile)
 }
 
-func (s *Service) GetProfile(ctx context.Context, req *server.RequestWithToken) (*server.GetProfileResponse, error) {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return nil, err
+func (s *Service) GetProfile(ctx context.Context) (models.ProfileShowcase, error) {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return models.ProfileShowcase{}, errUnauthenticated
 	}
 	profile, err := s.repository.GetProfile(userId)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
-	if profile == nil {
-		return &server.GetProfileResponse{}, nil
-	}
-	photoLinks, err := s.getUserPhotoLinks(ctx, userId)
+	photos, err := s.getUserPhotos(ctx, userId)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
-	return &server.GetProfileResponse{
-		Profile: unmapProfile(*profile, photoLinks),
+	return models.ProfileShowcase{
+		Profile: profile,
+		Photos:  photos,
 	}, nil
 }
 
-func (s *Service) UpdPreferences(ctx context.Context, req *server.UpdPreferencesRequest) error {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return err
+func (s *Service) UpdPreferences(ctx context.Context, newPreferences models.Preferences) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
 	}
-	mapped := mapPreferences(req.NewPreferences)
-	mapped.UserID = userId
-	return s.repository.PutPreferences(mapped)
+	newPreferences.UserID = userId
+	return s.repository.PutPreferences(newPreferences)
 }
 
-func (s *Service) GetPreferences(ctx context.Context, req *server.RequestWithToken) (*server.GetPreferencesResponse, error) {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return nil, err
+func (s *Service) GetPreferences(ctx context.Context) (models.Preferences, error) {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return models.Preferences{}, errUnauthenticated
 	}
 	preferences, err := s.repository.GetPreferences(userId)
 	if err != nil {
-		return nil, err
+		return models.Preferences{}, err
 	}
-	if preferences == nil {
-		return &server.GetPreferencesResponse{}, nil
-	}
-	return &server.GetPreferencesResponse{
-		Preferences: unmapPreferences(*preferences),
-	}, nil
+	return preferences, nil
 }

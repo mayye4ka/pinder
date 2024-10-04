@@ -4,30 +4,40 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mayye4ka/pinder/models"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
 var (
-	testCtx     = context.Background()
-	userId      = uint64(123)
-	user2Id     = uint64(124)
-	phoneNumber = "123456789"
-	password    = "SuperMegaPassword123"
-	passHash    = "a8630ec77eb54401e672f6fbb46c67304d02b9b747399b27f67e463b6878d7bb"
-	token       = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxMjN9.vp68JTvxUceGTgtbZfHHato2w2Hjzuuv-Ne-Ts3kwcY"
-	userName    = "name"
+	userId   = uint64(123)
+	user1Ctx = context.WithValue(context.Background(), userIdContextKey, userId)
+	user2Id  = uint64(124)
 
-	photoKeys  = []string{"ph1", "ph2"}
-	photoLinks = []string{"link1", "link2"}
+	userName   = "John"
+	photo1     = "ph1"
+	photo1Link = "link1"
+	photo2     = "ph2"
+	photo2Link = "link2"
+	photos     = []models.PhotoShowcase{
+		{
+			Key:  photo1,
+			Link: photo1Link,
+		},
+		{
+			Key:  photo2,
+			Link: photo2Link,
+		},
+	}
 )
 
 type ServiceTestSuite struct {
 	suite.Suite
-	repoMock           *MockRepository
-	fsMock             *MockFileStorage
-	userInteractorMock *MockUserInteractor
-	service            *Service
+	repoMock         *MockRepository
+	fsMock           *MockFileStorage
+	userNotifierMock *MockUserNotifier
+	sttMock          *MockStt
+	service          *Service
 }
 
 func TestService(t *testing.T) {
@@ -38,6 +48,7 @@ func (s *ServiceTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.repoMock = NewMockRepository(ctrl)
 	s.fsMock = NewMockFileStorage(ctrl)
-	s.userInteractorMock = NewMockUserInteractor(ctrl)
-	s.service = New(s.repoMock, s.fsMock, s.userInteractorMock)
+	s.userNotifierMock = NewMockUserNotifier(ctrl)
+	s.sttMock = NewMockStt(ctrl)
+	s.service = New(s.repoMock, s.fsMock, s.userNotifierMock, s.sttMock)
 }

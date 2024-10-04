@@ -3,6 +3,7 @@ package file_storage
 import (
 	"bytes"
 	"context"
+	"io"
 	"log"
 	"net/url"
 	"path/filepath"
@@ -45,6 +46,22 @@ func (fs *FileStorage) saveObj(ctx context.Context, name string, payload []byte)
 	return nil
 }
 
+func (fs *FileStorage) getObj(ctx context.Context, name string) (string, error) {
+	obj, err := fs.minioClient.GetObject(
+		ctx, bucket,
+		name,
+		minio.GetObjectOptions{})
+	if err != nil {
+		return "", err
+	}
+	defer obj.Close()
+	b, err := io.ReadAll(obj)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func (fs *FileStorage) delObj(ctx context.Context, name string) error {
 	return fs.minioClient.RemoveObject(
 		ctx, bucket,
@@ -60,45 +77,49 @@ func (fs *FileStorage) shareObj(ctx context.Context, name string) (string, error
 	return url.String(), nil
 }
 
-func (fs *FileStorage) SaveProfilePhoto(ctx context.Context, photo []byte) (string, error) {
+func (fs *FileStorage) SaveProfilePhoto(ctx context.Context, body []byte) (string, error) {
 	key := uuid.New().String()
-	err := fs.saveObj(ctx, filepath.Join(userPhotoDir, key), photo)
+	err := fs.saveObj(ctx, filepath.Join(userPhotoDir, key), body)
 	if err != nil {
 		return "", err
 	}
 	return key, nil
 }
 
-func (fs *FileStorage) DelProfilePhoto(ctx context.Context, photoKey string) error {
-	return fs.delObj(ctx, filepath.Join(userPhotoDir, photoKey))
+func (fs *FileStorage) DelProfilePhoto(ctx context.Context, key string) error {
+	return fs.delObj(ctx, filepath.Join(userPhotoDir, key))
 }
 
-func (fs *FileStorage) MakeProfilePhotoLink(ctx context.Context, photoKey string) (string, error) {
-	return fs.shareObj(ctx, filepath.Join(userPhotoDir, photoKey))
+func (fs *FileStorage) MakeProfilePhotoLink(ctx context.Context, key string) (string, error) {
+	return fs.shareObj(ctx, filepath.Join(userPhotoDir, key))
 }
 
-func (fs *FileStorage) SaveChatPhoto(ctx context.Context, photo []byte) (string, error) {
+func (fs *FileStorage) SaveChatPhoto(ctx context.Context, body []byte) (string, error) {
 	key := uuid.New().String()
-	err := fs.saveObj(ctx, filepath.Join(chatPhotoDir, key), photo)
+	err := fs.saveObj(ctx, filepath.Join(chatPhotoDir, key), body)
 	if err != nil {
 		return "", err
 	}
 	return key, nil
 }
 
-func (fs *FileStorage) MakeChatPhotoLink(ctx context.Context, photoKey string) (string, error) {
-	return fs.shareObj(ctx, filepath.Join(chatPhotoDir, photoKey))
+func (fs *FileStorage) MakeChatPhotoLink(ctx context.Context, key string) (string, error) {
+	return fs.shareObj(ctx, filepath.Join(chatPhotoDir, key))
 }
 
-func (fs *FileStorage) SaveChatVoice(ctx context.Context, photo []byte) (string, error) {
+func (fs *FileStorage) SaveChatVoice(ctx context.Context, body []byte) (string, error) {
 	key := uuid.New().String()
-	err := fs.saveObj(ctx, filepath.Join(chatVoiceDir, key), photo)
+	err := fs.saveObj(ctx, filepath.Join(chatVoiceDir, key), body)
 	if err != nil {
 		return "", err
 	}
 	return key, nil
 }
 
-func (fs *FileStorage) MakeChatVoiceLink(ctx context.Context, photoKey string) (string, error) {
-	return fs.shareObj(ctx, filepath.Join(chatVoiceDir, photoKey))
+func (fs *FileStorage) MakeChatVoiceLink(ctx context.Context, key string) (string, error) {
+	return fs.shareObj(ctx, filepath.Join(chatVoiceDir, key))
+}
+
+func (fs *FileStorage) GetChatVoice(ctx context.Context, key string) (string, error) {
+	return fs.getObj(ctx, filepath.Join(chatVoiceDir, key))
 }

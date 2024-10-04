@@ -2,8 +2,8 @@ package service
 
 import (
 	"errors"
-	"pinder/models"
-	"pinder/server"
+
+	"github.com/mayye4ka/pinder/models"
 
 	"golang.org/x/net/context"
 )
@@ -33,18 +33,18 @@ func (s *Service) enrichMessageWithLinks(ctx context.Context, message *models.Me
 	return nil
 }
 
-func (s *Service) ListChats(ctx context.Context, req *server.RequestWithToken) (*server.ListChatsResponse, error) {
-	userID, err := verifyToken(req.Token)
+func (s *Service) ListChats(ctx context.Context) ([]models.ChatShowcase, error) {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return nil, errUnauthenticated
+	}
+	chats, err := s.repository.GetChats(userId)
 	if err != nil {
 		return nil, err
 	}
-	chats, err := s.repository.GetChats(userID)
-	if err != nil {
-		return nil, err
-	}
-	mappedChats := []server.Chat{}
+	res := []models.ChatShowcase{}
 	for _, chat := range chats {
-		user2 := getWhoIsNotMe(chat, userID)
+		user2 := getWhoIsNotMe(chat, userId)
 		prof, err := s.repository.GetProfile(user2)
 		if err != nil {
 			return nil, err
@@ -57,84 +57,79 @@ func (s *Service) ListChats(ctx context.Context, req *server.RequestWithToken) (
 		if err != nil {
 			return nil, err
 		}
-		mappedChats = append(mappedChats, server.Chat{
-			ChatID: chat.ID,
-			Name:   prof.Name,
-			Photo:  link,
+		res = append(res, models.ChatShowcase{
+			ID:    chat.ID,
+			Name:  prof.Name,
+			Photo: link,
 		})
 	}
 
-	return &server.ListChatsResponse{
-		Chats: mappedChats,
-	}, nil
+	return res, nil
 }
 
-func (s *Service) ListMessages(ctx context.Context, req *server.ListMessagesRequest) (*server.ListMessagesResponse, error) {
-	userID, err := verifyToken(req.Token)
+func (s *Service) ListMessages(ctx context.Context, chatId uint64) ([]models.MessageShowcase, error) {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return nil, errUnauthenticated
+	}
+	chat, err := s.repository.GetChat(chatId)
 	if err != nil {
 		return nil, err
 	}
-	chat, err := s.repository.GetChat(req.ChatId)
-	if err != nil {
-		return nil, err
-	}
-	if chat.User1 != userID && chat.User2 != userID {
+	if chat.User1 != userId && chat.User2 != userId {
 		return nil, errors.New("access denied")
 	}
-	messages, err := s.repository.GetMessages(req.ChatId)
+	messages, err := s.repository.GetMessages(chatId)
 	if err != nil {
 		return nil, err
 	}
-	mappedMessages := []server.Message{}
+	res := []models.MessageShowcase{}
 	for _, msg := range messages {
 		sentByMe := true
-		if msg.SenderID != userID {
+		if msg.SenderID != userId {
 			sentByMe = false
 		}
 		err = s.enrichMessageWithLinks(ctx, &msg)
 		if err != nil {
 			return nil, err
 		}
-		mappedMessages = append(mappedMessages, server.Message{
+		res = append(res, models.MessageShowcase{
 			ID:          msg.ID,
 			SentByMe:    sentByMe,
-			ContentType: unmapContentType(msg.ContentType),
+			ContentType: msg.ContentType,
 			Payload:     msg.Payload,
 			CreatedAt:   msg.CreatedAt,
 		})
 	}
-	return &server.ListMessagesResponse{
-		Messages: mappedMessages,
-	}, nil
+	return res, nil
 }
 
-func (s *Service) SendMessage(ctx context.Context, req *server.SendMessageRequest) error {
-	userID, err := verifyToken(req.Token)
+func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType models.MsgContentType, payload string) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
+	}
+	chat, err := s.repository.GetChat(chatId)
 	if err != nil {
 		return err
 	}
-	chat, err := s.repository.GetChat(req.ChatID)
-	if err != nil {
-		return err
-	}
-	if chat.User1 != userID && chat.User2 != userID {
+	if chat.User1 != userId && chat.User2 != userId {
 		return errors.New("access denied")
 	}
-	payload := req.Payload
-	if req.ContentType == server.ContentVoice {
-		key, err := s.filestorage.SaveChatVoice(ctx, []byte(req.Payload))
+	if contentType == models.ContentVoice {
+		key, err := s.filestorage.SaveChatVoice(ctx, []byte(payload))
 		if err != nil {
 			return nil
 		}
 		payload = key
-	} else if req.ContentType == server.ContentPhoto {
-		key, err := s.filestorage.SaveChatPhoto(ctx, []byte(req.Payload))
+	} else if contentType == models.ContentPhoto {
+		key, err := s.filestorage.SaveChatPhoto(ctx, []byte(payload))
 		if err != nil {
 			return nil
 		}
 		payload = key
 	}
-	msg, err := s.repository.SendMessage(req.ChatID, userID, mapContentType(req.ContentType), payload)
+	msg, err := s.repository.SendMessage(chatId, userId, contentType, payload)
 	if err != nil {
 		return err
 	}
@@ -142,6 +137,21 @@ func (s *Service) SendMessage(ctx context.Context, req *server.SendMessageReques
 	if err != nil {
 		return err
 	}
-	s.userInteractor.SendMessage(chat, msg)
+	for _, recv := range []uint64{chat.User1, chat.User2} {
+		sentByMe := true
+		if recv != userId {
+			sentByMe = false
+		}
+		err = s.userNotifier.SendMessage(recv, models.MessageSend{
+			ChatID:      chatId,
+			MessageID:   msg.ID,
+			SentByMe:    sentByMe,
+			ContentType: contentType,
+			Payload:     payload,
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

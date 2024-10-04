@@ -2,29 +2,30 @@ package service
 
 import (
 	"context"
-	"pinder/models"
-	"pinder/server"
+
+	"github.com/mayye4ka/pinder/models"
 )
 
-func (s *Service) submitNextPartner(ctx context.Context, candidate *models.Profile) (*server.NextPartnerResponse, error) {
-	links, err := s.getUserPhotoLinks(ctx, candidate.UserID)
+func (s *Service) submitNextPartner(ctx context.Context, candidate *models.Profile) (models.ProfileShowcase, error) {
+	photos, err := s.getUserPhotos(ctx, candidate.UserID)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
-	return &server.NextPartnerResponse{
-		Partner: unmapProfile(*candidate, links),
+	return models.ProfileShowcase{
+		Profile: *candidate,
+		Photos:  photos,
 	}, nil
 }
 
-func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken) (*server.NextPartnerResponse, error) {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return nil, err
+func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, error) {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return models.ProfileShowcase{}, errUnauthenticated
 	}
 
 	candidate, err := s.repository.GetHangingPartner(userId)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
 	if candidate != nil {
 		return s.submitNextPartner(ctx, candidate)
@@ -32,45 +33,45 @@ func (s *Service) NextPartner(ctx context.Context, req *server.RequestWithToken)
 
 	candidate, err = s.repository.GetWhoLikedMe(userId)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
 
 	if candidate != nil {
 		pa, err := s.repository.GetLatestPairAttempt(candidate.UserID, userId)
 		if err != nil {
-			return nil, err
+			return models.ProfileShowcase{}, err
 		}
 		err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser2)
 		if err != nil {
-			return nil, err
+			return models.ProfileShowcase{}, err
 		}
 		return s.submitNextPartner(ctx, candidate)
 	}
 
 	candidate, err = s.repository.ChooseCandidateAndCreatePairAttempt(userId)
 	if err != nil {
-		return nil, err
+		return models.ProfileShowcase{}, err
 	}
 	return s.submitNextPartner(ctx, candidate)
 }
 
-func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return err
+func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict models.SwipeVerdict) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
 	}
-	pa, err := s.repository.GetPendingPairAttemptByUserPair(userId, req.CandidateID)
+	pa, err := s.repository.GetPendingPairAttemptByUserPair(userId, candidateId)
 	if err != nil {
 		return err
 	}
 	var eventType models.PEType
-	if req.SwipeVerdict == server.SwipeLike && pa.User1 == userId {
+	if swipeVerdict == models.SwipeVerdictLike && pa.User1 == userId {
 		eventType = models.PETypeUser1Liked
-	} else if req.SwipeVerdict == server.SwipeDislike && pa.User1 == userId {
+	} else if swipeVerdict == models.SwipeVerdictDislike && pa.User1 == userId {
 		eventType = models.PETypeUser1Disliked
-	} else if req.SwipeVerdict == server.SwipeLike && pa.User2 == userId {
+	} else if swipeVerdict == models.SwipeVerdictLike && pa.User2 == userId {
 		eventType = models.PETypeUser2Liked
-	} else if req.SwipeVerdict == server.SwipeDislike && pa.User2 == userId {
+	} else if swipeVerdict == models.SwipeVerdictDislike && pa.User2 == userId {
 		eventType = models.PETypeUser2Disliked
 	}
 	err = s.repository.CreateEvent(pa.ID, eventType)
@@ -78,7 +79,7 @@ func (s *Service) Swipe(ctx context.Context, req *server.SwipeRequest) error {
 		return err
 	}
 
-	if req.SwipeVerdict == server.SwipeDislike {
+	if swipeVerdict == models.SwipeVerdictDislike {
 		return s.repository.FinishPairAttempt(pa.ID, models.PAStateMismatch)
 	}
 	if pa.User1 == userId {
@@ -116,7 +117,10 @@ func (s *Service) notifyLikedUser(ctx context.Context, whoLiked, whomLiked uint6
 	if err != nil {
 		return err
 	}
-	err = s.userInteractor.NotifyLiked(whomLiked, prof.Name, link)
+	err = s.userNotifier.NotifyLiked(whomLiked, models.LikeNotification{
+		Name:  prof.Name,
+		Photo: link,
+	})
 	if err != nil {
 		return err
 	}
@@ -144,7 +148,10 @@ func (s *Service) oneDirectionalNotifyMatch(ctx context.Context, sender, receive
 	if err != nil {
 		return err
 	}
-	err = s.userInteractor.NotifyMatch(receiver, prof.Name, link)
+	err = s.userNotifier.NotifyMatch(receiver, models.MatchNotification{
+		Name:  prof.Name,
+		Photo: link,
+	})
 	if err != nil {
 		return err
 	}

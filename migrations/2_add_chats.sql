@@ -15,3 +15,7 @@ CREATE TABLE messages(
     PRIMARY KEY(id),
     KEY(chat_id)
 );
+
+-- +migrate Down
+DROP TABLE chats;
+DROP TABLE messages;

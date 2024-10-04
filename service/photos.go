@@ -2,45 +2,49 @@ package service
 
 import (
 	"context"
-	"pinder/server"
+
+	"github.com/mayye4ka/pinder/models"
 )
 
-func (s *Service) getUserPhotoLinks(ctx context.Context, userId uint64) ([]string, error) {
+func (s *Service) getUserPhotos(ctx context.Context, userId uint64) ([]models.PhotoShowcase, error) {
 	photos, err := s.repository.GetUserPhotos(userId)
 	if err != nil {
 		return nil, err
 	}
-	links := make([]string, len(photos))
+	res := make([]models.PhotoShowcase, len(photos))
 	for i, photo := range photos {
 		link, err := s.filestorage.MakeProfilePhotoLink(ctx, photo)
 		if err != nil {
 			return nil, err
 		}
-		links[i] = link
+		res[i] = models.PhotoShowcase{
+			Key:  photo,
+			Link: link,
+		}
 	}
-	return links, nil
+	return res, nil
 }
 
-func (s *Service) AddPhoto(ctx context.Context, req *server.AddPhotoRequest) error {
-	userId, err := verifyToken(req.Token)
-	if err != nil {
-		return err
+func (s *Service) AddPhoto(ctx context.Context, photo string) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
 	}
-	key, err := s.filestorage.SaveProfilePhoto(ctx, []byte(req.Photo))
+	key, err := s.filestorage.SaveProfilePhoto(ctx, []byte(photo))
 	if err != nil {
 		return err
 	}
 	return s.repository.AddPhoto(userId, key)
 }
 
-func (s *Service) DeletePhoto(ctx context.Context, req *server.DelPhotoRequest) error {
-	userId, err := verifyToken(req.Token)
+func (s *Service) DeletePhoto(ctx context.Context, photoKey string) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
+	}
+	err := s.filestorage.DelProfilePhoto(ctx, photoKey)
 	if err != nil {
 		return err
 	}
-	err = s.filestorage.DelProfilePhoto(ctx, req.PhotoKey)
-	if err != nil {
-		return err
-	}
-	return s.repository.DeleteUserPhoto(userId, req.PhotoKey)
+	return s.repository.DeleteUserPhoto(userId, photoKey)
 }

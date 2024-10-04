@@ -7,72 +7,29 @@ import (
 	"github.com/jftuga/geodist"
 )
 
+// enums
+
+type MsgContentType string
+
+const (
+	ContentText  MsgContentType = "text"
+	ContentPhoto MsgContentType = "photo"
+	ContentVoice MsgContentType = "voice"
+)
+
+type SwipeVerdict string
+
+const (
+	SwipeVerdictLike    SwipeVerdict = "like"
+	SwipeVerdictDislike SwipeVerdict = "dislike"
+)
+
 type Gender string
 
 const (
 	GenderMale   Gender = "male"
 	GenderFemale Gender = "female"
 )
-
-type User struct {
-	ID          uint64
-	PhoneNumber string
-	PassHash    string
-}
-
-func (User) TableName() string {
-	return "users"
-}
-
-type Profile struct {
-	UserID       uint64
-	Name         string
-	Gender       Gender
-	Age          int
-	Bio          string
-	LocationLat  float64
-	LocationLon  float64
-	LocationName string
-}
-
-func (Profile) TableName() string {
-	return "profiles"
-}
-
-type Photo struct {
-	UserID   uint64
-	PhotoKey string
-}
-
-func (Photo) TableName() string {
-	return "photos"
-}
-
-type Preferences struct {
-	UserID           uint64
-	MaxAge           int
-	MinAge           int
-	Gender           Gender
-	LocationLat      float64
-	LocationLon      float64
-	LocationRadiusKm float64
-}
-
-func (Preferences) TableName() string {
-	return "preferences"
-}
-
-type PairAttempt struct {
-	ID        uint64
-	User1     uint64
-	User2     uint64
-	State     PAState
-	CreatedAt time.Time
-}
-
-func (PairAttempt) TableName() string {
-	return "pair_attempts"
-}
 
 type PAState string
 
@@ -96,6 +53,48 @@ const (
 	PETypePairCreated       PEType = "pair_created"
 )
 
+// basic entities
+
+type User struct {
+	ID          uint64
+	PhoneNumber string
+	PassHash    string
+}
+
+type Profile struct {
+	UserID       uint64
+	Name         string
+	Gender       Gender
+	Age          int
+	Bio          string
+	LocationLat  float64
+	LocationLon  float64
+	LocationName string
+}
+
+type Photo struct {
+	UserID   uint64
+	PhotoKey string
+}
+
+type Preferences struct {
+	UserID           uint64
+	MaxAge           int
+	MinAge           int
+	Gender           Gender
+	LocationLat      float64
+	LocationLon      float64
+	LocationRadiusKm float64
+}
+
+type PairAttempt struct {
+	ID        uint64
+	User1     uint64
+	User2     uint64
+	State     PAState
+	CreatedAt time.Time
+}
+
 type PairEvent struct {
 	ID        uint64
 	PAID      uint64
@@ -103,8 +102,50 @@ type PairEvent struct {
 	EventType PEType
 }
 
-func (PairEvent) TableName() string {
-	return "pair_events"
+type Chat struct {
+	ID    uint64
+	User1 uint64
+	User2 uint64
+}
+
+type Message struct {
+	ID          uint64
+	ChatID      uint64
+	SenderID    uint64
+	ContentType MsgContentType
+	Payload     string
+	CreatedAt   time.Time
+}
+
+type MessageTranscription struct {
+	MessageID     uint64
+	Transcription string
+}
+
+// showcases
+
+type PhotoShowcase struct {
+	Key  string
+	Link string
+}
+
+type MessageShowcase struct {
+	ID          uint64
+	SentByMe    bool
+	ContentType MsgContentType
+	Payload     string
+	CreatedAt   time.Time
+}
+
+type ChatShowcase struct {
+	ID    uint64
+	Name  string
+	Photo string
+}
+
+type ProfileShowcase struct {
+	Profile Profile
+	Photos  []PhotoShowcase
 }
 
 func (p *Preferences) ProfileMatches(profile Profile) bool {
@@ -132,35 +173,4 @@ func (p *Preferences) ProfileMatches(profile Profile) bool {
 		return false
 	}
 	return true
-}
-
-type Chat struct {
-	ID    uint64
-	User1 uint64
-	User2 uint64
-}
-
-func (Chat) TableName() string {
-	return "chats"
-}
-
-type MsgContentType string
-
-const (
-	ContentText  MsgContentType = "text"
-	ContentPhoto MsgContentType = "photo"
-	ContentVoice MsgContentType = "voice"
-)
-
-type Message struct {
-	ID          uint64
-	ChatID      uint64
-	SenderID    uint64
-	ContentType MsgContentType
-	Payload     string
-	CreatedAt   time.Time
-}
-
-func (Message) TableName() string {
-	return "messages"
 }

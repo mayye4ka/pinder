@@ -11,9 +11,9 @@ package service
 
 import (
 	context "context"
-	models "pinder/models"
 	reflect "reflect"
 
+	models "github.com/mayye4ka/pinder/models"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -95,21 +95,6 @@ func (m *MockRepository) CreateEvent(PAID uint64, eventType models.PEType) error
 func (mr *MockRepositoryMockRecorder) CreateEvent(PAID, eventType any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEvent", reflect.TypeOf((*MockRepository)(nil).CreateEvent), PAID, eventType)
-}
-
-// CreateUser mocks base method.
-func (m *MockRepository) CreateUser(phoneNumber, passHash string) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", phoneNumber, passHash)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateUser indicates an expected call of CreateUser.
-func (mr *MockRepositoryMockRecorder) CreateUser(phoneNumber, passHash any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockRepository)(nil).CreateUser), phoneNumber, passHash)
 }
 
 // DeleteUserPhoto mocks base method.
@@ -200,6 +185,37 @@ func (mr *MockRepositoryMockRecorder) GetLatestPairAttempt(user1, user2 any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPairAttempt", reflect.TypeOf((*MockRepository)(nil).GetLatestPairAttempt), user1, user2)
 }
 
+// GetMessage mocks base method.
+func (m *MockRepository) GetMessage(msgID uint64) (models.Message, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMessage", msgID)
+	ret0, _ := ret[0].(models.Message)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMessage indicates an expected call of GetMessage.
+func (mr *MockRepositoryMockRecorder) GetMessage(msgID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessage", reflect.TypeOf((*MockRepository)(nil).GetMessage), msgID)
+}
+
+// GetMessageTranscription mocks base method.
+func (m *MockRepository) GetMessageTranscription(id uint64) (string, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMessageTranscription", id)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMessageTranscription indicates an expected call of GetMessageTranscription.
+func (mr *MockRepositoryMockRecorder) GetMessageTranscription(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMessageTranscription", reflect.TypeOf((*MockRepository)(nil).GetMessageTranscription), id)
+}
+
 // GetMessages mocks base method.
 func (m *MockRepository) GetMessages(chatID uint64) ([]models.Message, error) {
 	m.ctrl.T.Helper()
@@ -231,10 +247,10 @@ func (mr *MockRepositoryMockRecorder) GetPendingPairAttemptByUserPair(user1, use
 }
 
 // GetPreferences mocks base method.
-func (m *MockRepository) GetPreferences(arg0 uint64) (*models.Preferences, error) {
+func (m *MockRepository) GetPreferences(arg0 uint64) (models.Preferences, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreferences", arg0)
-	ret0, _ := ret[0].(*models.Preferences)
+	ret0, _ := ret[0].(models.Preferences)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -246,10 +262,10 @@ func (mr *MockRepositoryMockRecorder) GetPreferences(arg0 any) *gomock.Call {
 }
 
 // GetProfile mocks base method.
-func (m *MockRepository) GetProfile(arg0 uint64) (*models.Profile, error) {
+func (m *MockRepository) GetProfile(arg0 uint64) (models.Profile, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProfile", arg0)
-	ret0, _ := ret[0].(*models.Profile)
+	ret0, _ := ret[0].(models.Profile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -261,10 +277,10 @@ func (mr *MockRepositoryMockRecorder) GetProfile(arg0 any) *gomock.Call {
 }
 
 // GetUser mocks base method.
-func (m *MockRepository) GetUser(id uint64) (*models.User, error) {
+func (m *MockRepository) GetUser(id uint64) (models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUser", id)
-	ret0, _ := ret[0].(*models.User)
+	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -273,21 +289,6 @@ func (m *MockRepository) GetUser(id uint64) (*models.User, error) {
 func (mr *MockRepositoryMockRecorder) GetUser(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockRepository)(nil).GetUser), id)
-}
-
-// GetUserByCreds mocks base method.
-func (m *MockRepository) GetUserByCreds(phoneNumber, passHash string) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByCreds", phoneNumber, passHash)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUserByCreds indicates an expected call of GetUserByCreds.
-func (mr *MockRepositoryMockRecorder) GetUserByCreds(phoneNumber, passHash any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByCreds", reflect.TypeOf((*MockRepository)(nil).GetUserByCreds), phoneNumber, passHash)
 }
 
 // GetUserPhotos mocks base method.
@@ -348,6 +349,20 @@ func (mr *MockRepositoryMockRecorder) PutProfile(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutProfile", reflect.TypeOf((*MockRepository)(nil).PutProfile), arg0)
 }
 
+// SaveMessageTranscription mocks base method.
+func (m *MockRepository) SaveMessageTranscription(id uint64, text string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveMessageTranscription", id, text)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveMessageTranscription indicates an expected call of SaveMessageTranscription.
+func (mr *MockRepositoryMockRecorder) SaveMessageTranscription(id, text any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMessageTranscription", reflect.TypeOf((*MockRepository)(nil).SaveMessageTranscription), id, text)
+}
+
 // SendMessage mocks base method.
 func (m *MockRepository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error) {
 	m.ctrl.T.Helper()
@@ -398,6 +413,21 @@ func (m *MockFileStorage) DelProfilePhoto(ctx context.Context, photoKey string) 
 func (mr *MockFileStorageMockRecorder) DelProfilePhoto(ctx, photoKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelProfilePhoto", reflect.TypeOf((*MockFileStorage)(nil).DelProfilePhoto), ctx, photoKey)
+}
+
+// GetChatVoice mocks base method.
+func (m *MockFileStorage) GetChatVoice(ctx context.Context, key string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChatVoice", ctx, key)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChatVoice indicates an expected call of GetChatVoice.
+func (mr *MockFileStorageMockRecorder) GetChatVoice(ctx, key any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChatVoice", reflect.TypeOf((*MockFileStorage)(nil).GetChatVoice), ctx, key)
 }
 
 // MakeChatPhotoLink mocks base method.
@@ -490,67 +520,132 @@ func (mr *MockFileStorageMockRecorder) SaveProfilePhoto(ctx, photo any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveProfilePhoto", reflect.TypeOf((*MockFileStorage)(nil).SaveProfilePhoto), ctx, photo)
 }
 
-// MockUserInteractor is a mock of UserInteractor interface.
-type MockUserInteractor struct {
+// MockUserNotifier is a mock of UserNotifier interface.
+type MockUserNotifier struct {
 	ctrl     *gomock.Controller
-	recorder *MockUserInteractorMockRecorder
+	recorder *MockUserNotifierMockRecorder
 }
 
-// MockUserInteractorMockRecorder is the mock recorder for MockUserInteractor.
-type MockUserInteractorMockRecorder struct {
-	mock *MockUserInteractor
+// MockUserNotifierMockRecorder is the mock recorder for MockUserNotifier.
+type MockUserNotifierMockRecorder struct {
+	mock *MockUserNotifier
 }
 
-// NewMockUserInteractor creates a new mock instance.
-func NewMockUserInteractor(ctrl *gomock.Controller) *MockUserInteractor {
-	mock := &MockUserInteractor{ctrl: ctrl}
-	mock.recorder = &MockUserInteractorMockRecorder{mock}
+// NewMockUserNotifier creates a new mock instance.
+func NewMockUserNotifier(ctrl *gomock.Controller) *MockUserNotifier {
+	mock := &MockUserNotifier{ctrl: ctrl}
+	mock.recorder = &MockUserNotifierMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockUserInteractor) EXPECT() *MockUserInteractorMockRecorder {
+func (m *MockUserNotifier) EXPECT() *MockUserNotifierMockRecorder {
 	return m.recorder
 }
 
 // NotifyLiked mocks base method.
-func (m *MockUserInteractor) NotifyLiked(userId uint64, opName, opPhoto string) error {
+func (m *MockUserNotifier) NotifyLiked(userId uint64, notification models.LikeNotification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyLiked", userId, opName, opPhoto)
+	ret := m.ctrl.Call(m, "NotifyLiked", userId, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NotifyLiked indicates an expected call of NotifyLiked.
-func (mr *MockUserInteractorMockRecorder) NotifyLiked(userId, opName, opPhoto any) *gomock.Call {
+func (mr *MockUserNotifierMockRecorder) NotifyLiked(userId, notification any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyLiked", reflect.TypeOf((*MockUserInteractor)(nil).NotifyLiked), userId, opName, opPhoto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyLiked", reflect.TypeOf((*MockUserNotifier)(nil).NotifyLiked), userId, notification)
 }
 
 // NotifyMatch mocks base method.
-func (m *MockUserInteractor) NotifyMatch(userId uint64, opName, opPhoto string) error {
+func (m *MockUserNotifier) NotifyMatch(userId uint64, notification models.MatchNotification) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyMatch", userId, opName, opPhoto)
+	ret := m.ctrl.Call(m, "NotifyMatch", userId, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NotifyMatch indicates an expected call of NotifyMatch.
-func (mr *MockUserInteractorMockRecorder) NotifyMatch(userId, opName, opPhoto any) *gomock.Call {
+func (mr *MockUserNotifierMockRecorder) NotifyMatch(userId, notification any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyMatch", reflect.TypeOf((*MockUserInteractor)(nil).NotifyMatch), userId, opName, opPhoto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyMatch", reflect.TypeOf((*MockUserNotifier)(nil).NotifyMatch), userId, notification)
 }
 
 // SendMessage mocks base method.
-func (m *MockUserInteractor) SendMessage(chat models.Chat, message models.Message) error {
+func (m *MockUserNotifier) SendMessage(userId uint64, notification models.MessageSend) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendMessage", chat, message)
+	ret := m.ctrl.Call(m, "SendMessage", userId, notification)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendMessage indicates an expected call of SendMessage.
-func (mr *MockUserInteractorMockRecorder) SendMessage(chat, message any) *gomock.Call {
+func (mr *MockUserNotifierMockRecorder) SendMessage(userId, notification any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockUserInteractor)(nil).SendMessage), chat, message)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockUserNotifier)(nil).SendMessage), userId, notification)
+}
+
+// SendTranscribedMessage mocks base method.
+func (m *MockUserNotifier) SendTranscribedMessage(userId uint64, notification models.MessageTranscibed) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendTranscribedMessage", userId, notification)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendTranscribedMessage indicates an expected call of SendTranscribedMessage.
+func (mr *MockUserNotifierMockRecorder) SendTranscribedMessage(userId, notification any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTranscribedMessage", reflect.TypeOf((*MockUserNotifier)(nil).SendTranscribedMessage), userId, notification)
+}
+
+// MockStt is a mock of Stt interface.
+type MockStt struct {
+	ctrl     *gomock.Controller
+	recorder *MockSttMockRecorder
+}
+
+// MockSttMockRecorder is the mock recorder for MockStt.
+type MockSttMockRecorder struct {
+	mock *MockStt
+}
+
+// NewMockStt creates a new mock instance.
+func NewMockStt(ctrl *gomock.Controller) *MockStt {
+	mock := &MockStt{ctrl: ctrl}
+	mock.recorder = &MockSttMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockStt) EXPECT() *MockSttMockRecorder {
+	return m.recorder
+}
+
+// PutTask mocks base method.
+func (m *MockStt) PutTask(task models.SttTask) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PutTask", task)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PutTask indicates an expected call of PutTask.
+func (mr *MockSttMockRecorder) PutTask(task any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutTask", reflect.TypeOf((*MockStt)(nil).PutTask), task)
+}
+
+// ResultsChan mocks base method.
+func (m *MockStt) ResultsChan() <-chan models.SttResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResultsChan")
+	ret0, _ := ret[0].(<-chan models.SttResult)
+	return ret0
+}
+
+// ResultsChan indicates an expected call of ResultsChan.
+func (mr *MockSttMockRecorder) ResultsChan() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResultsChan", reflect.TypeOf((*MockStt)(nil).ResultsChan))
 }
