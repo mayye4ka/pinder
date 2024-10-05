@@ -3,7 +3,7 @@ on:
     push:
         branches: ['*']
 env:
-  GOPRIVATE: github.com/mayye4ka
+  GOPRIVATE: github.com/mayye4ka/*
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
