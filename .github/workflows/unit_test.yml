@@ -18,7 +18,7 @@ jobs:
       - name: Configure git for private modules
         run: git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
       - name: ECHO
-        run: echo ${USER}:${TOKEN}
+        run: echo ${#USER}:${#TOKEN}
       - name: Install dependencies
         run: go mod download
       - name: Build
