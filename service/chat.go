@@ -8,11 +8,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-func getWhoIsNotMe(chat models.Chat, userId uint64) uint64 {
-	if chat.User1 == userId {
-		return chat.User2
+func getWhoIsNotMe(id1, id2, userId uint64) uint64 {
+	if id1 == userId {
+		return id2
 	}
-	return chat.User1
+	return id1
 }
 
 func (s *Service) enrichMessageWithLinks(ctx context.Context, message *models.Message) error {
@@ -44,7 +44,7 @@ func (s *Service) ListChats(ctx context.Context) ([]models.ChatShowcase, error) 
 	}
 	res := []models.ChatShowcase{}
 	for _, chat := range chats {
-		user2 := getWhoIsNotMe(chat, userId)
+		user2 := getWhoIsNotMe(chat.User1, chat.User2, userId)
 		prof, err := s.repository.GetProfile(user2)
 		if err != nil {
 			return nil, err

@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/mayye4ka/pinder/models"
@@ -67,14 +69,50 @@ func (r *Repository) FinishPairAttempt(PAID uint64, state models.PAState) error 
 	return res.Error
 }
 
-func (r *Repository) CreatePairAttempt(user1, user2 uint64) error {
-	res := r.db.Create(&PairAttempt{
+func (r *Repository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error) {
+	pa := PairAttempt{
 		User1:     user1,
 		User2:     user2,
 		State:     PAStatePending,
 		CreatedAt: time.Now(),
-	})
-	return res.Error
+	}
+	res := r.db.Create(&pa)
+	if res.Error != nil {
+		return models.PairAttempt{}, res.Error
+	}
+	return mapPairAttempt(pa), nil
+}
+
+func (r *Repository) GetWhoLikedMe(userID uint64) (uint64, error) {
+	var pair PairAttempt
+	res := r.db.Model(&PairAttempt{}).
+		Where("user2 = ? and state = ?", userID, PAStatePending).
+		Order("created_at").First(&pair)
+	if res.Error != nil && !errors.Is(res.Error, sql.ErrNoRows) {
+		return 0, res.Error
+	} else if res.Error != nil {
+		return 0, nil
+	}
+	return pair.User1, nil
+}
+
+func (r *Repository) GetPendingPairAttempts(user1ID uint64) ([]models.PairAttempt, error) {
+	var pas []PairAttempt
+	res := r.db.Model(&PairAttempt{}).
+		Where("user1 = ? and state = ?", user1ID, PAStatePending).
+		Find(&pas)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return mapPairAttempts(pas), nil
+}
+
+func mapPairAttempts(pas []PairAttempt) []models.PairAttempt {
+	res := make([]models.PairAttempt, len(pas))
+	for i, pa := range pas {
+		res[i] = mapPairAttempt(pa)
+	}
+	return res
 }
 
 func mapPairAttempt(pa PairAttempt) models.PairAttempt {

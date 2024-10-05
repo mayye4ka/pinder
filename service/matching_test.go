@@ -1,177 +1,144 @@
 package service
 
-import (
-	"github.com/mayye4ka/pinder/models"
+import "github.com/mayye4ka/pinder/models"
+
+var (
+	PAID = uint64(777)
 )
 
+func (s *ServiceTestSuite) TestNextPartner_InvalidUser() {
+	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{}, nil)
+	s.repoMock.EXPECT().GetPreferences(userId).Return(models.Preferences{}, nil)
+
+	candidate, err := s.service.NextPartner(user1Ctx)
+
+	s.Equal("incomplete profile", err.Error())
+	s.Equal(models.ProfileShowcase{}, candidate)
+}
+
 func (s *ServiceTestSuite) TestNextPartner_ReturnsHangingPartner() {
-	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
-	for _, k := range photos {
-		s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, k.Key).Return(k.Link, nil)
-	}
-	s.repoMock.EXPECT().GetHangingPartner(userId).Return(&models.Profile{
-		UserID:       user2Id,
-		Name:         userName,
-		Gender:       models.GenderMale,
-		Age:          20,
-		Bio:          "bio",
-		LocationLat:  123,
-		LocationLon:  456,
-		LocationName: "Kolbasino neighbourghood",
+	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{
+		UserID: userId,
 	}, nil)
+	s.repoMock.EXPECT().GetPreferences(userId).Return(models.Preferences{
+		UserID: userId,
+	}, nil)
+
+	s.repoMock.EXPECT().GetPendingPairAttempts(userId).Return([]models.PairAttempt{{
+		ID:    PAID,
+		User2: user2Id,
+	}}, nil)
+	s.repoMock.EXPECT().GetLastEvent(PAID).Return(models.PairEvent{EventType: models.PETypeSentToUser1}, nil)
+
+	s.repoMock.EXPECT().GetProfile(user2Id).Return(models.Profile{UserID: user2Id}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
+
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo2).Return(photo2Link, nil)
 
 	candidate, err := s.service.NextPartner(user1Ctx)
 
 	s.Nil(err)
 	s.Equal(models.ProfileShowcase{
 		Profile: models.Profile{
-			UserID:       user2Id,
-			Name:         userName,
-			Gender:       models.GenderMale,
-			Age:          20,
-			Bio:          "bio",
-			LocationLat:  123,
-			LocationLon:  456,
-			LocationName: "Kolbasino neighbourghood",
+			UserID: user2Id,
 		},
 		Photos: photos,
 	}, candidate)
 }
 
 func (s *ServiceTestSuite) TestNextPartner_ReturnsWhoLikedMe() {
-	s.repoMock.EXPECT().GetHangingPartner(userId).Return(nil, nil)
-
-	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
-	for _, k := range photos {
-		s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, k.Key).Return(k.Link, nil)
-	}
-	s.repoMock.EXPECT().GetLatestPairAttempt(user2Id, userId).Return(models.PairAttempt{ID: 1}, nil)
-	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeSentToUser2).Return(nil)
-	s.repoMock.EXPECT().GetWhoLikedMe(userId).Return(&models.Profile{
-		UserID:       user2Id,
-		Name:         userName,
-		Gender:       models.GenderMale,
-		Age:          20,
-		Bio:          "bio",
-		LocationLat:  123,
-		LocationLon:  456,
-		LocationName: "Kolbasino neighbourghood",
+	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{
+		UserID: userId,
 	}, nil)
+	s.repoMock.EXPECT().GetPreferences(userId).Return(models.Preferences{
+		UserID: userId,
+	}, nil)
+
+	s.repoMock.EXPECT().GetPendingPairAttempts(userId).Return([]models.PairAttempt{}, nil)
+
+	s.repoMock.EXPECT().GetWhoLikedMe(userId).Return(user2Id, nil)
+	s.repoMock.EXPECT().GetLatestPairAttempt(user2Id, userId).Return(models.PairAttempt{ID: PAID}, nil)
+	s.repoMock.EXPECT().CreateEvent(PAID, models.PETypeSentToUser2).Return(nil)
+
+	s.repoMock.EXPECT().GetProfile(user2Id).Return(models.Profile{UserID: user2Id}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
+
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo2).Return(photo2Link, nil)
 
 	candidate, err := s.service.NextPartner(user1Ctx)
 
 	s.Nil(err)
 	s.Equal(models.ProfileShowcase{
 		Profile: models.Profile{
-			UserID:       user2Id,
-			Name:         userName,
-			Gender:       models.GenderMale,
-			Age:          20,
-			Bio:          "bio",
-			LocationLat:  123,
-			LocationLon:  456,
-			LocationName: "Kolbasino neighbourghood",
+			UserID: user2Id,
 		},
 		Photos: photos,
 	}, candidate)
 }
 
 func (s *ServiceTestSuite) TestNextPartner_ReturnsNewPair() {
-	s.repoMock.EXPECT().GetHangingPartner(userId).Return(nil, nil)
-	s.repoMock.EXPECT().GetWhoLikedMe(userId).Return(nil, nil)
+	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{
+		UserID: userId,
+		Age:    19,
+	}, nil).Times(2)
+	s.repoMock.EXPECT().GetPreferences(userId).Return(models.Preferences{
+		UserID: userId,
+		MinAge: 18,
+		MaxAge: 20,
+	}, nil).Times(2)
+
+	s.repoMock.EXPECT().GetPendingPairAttempts(userId).Return([]models.PairAttempt{}, nil)
+	s.repoMock.EXPECT().GetWhoLikedMe(userId).Return(uint64(0), nil)
+
+	s.repoMock.EXPECT().GetAllValidUsers().Return([]uint64{user2Id}, nil)
+	s.repoMock.EXPECT().GetProfile(user2Id).Return(models.Profile{
+		UserID: user2Id,
+		Age:    19,
+	}, nil).Times(2)
+	s.repoMock.EXPECT().GetPreferences(user2Id).Return(models.Preferences{
+		UserID: user2Id,
+		MinAge: 18,
+		MaxAge: 20,
+	}, nil)
+
+	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{}, nil)
+	s.repoMock.EXPECT().GetLatestPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{}, nil)
+	s.repoMock.EXPECT().CreatePairAttempt(userId, user2Id).Return(models.PairAttempt{ID: PAID}, nil)
+	s.repoMock.EXPECT().CreateEvent(PAID, models.PETypePACreated).Return(nil)
+	s.repoMock.EXPECT().CreateEvent(PAID, models.PETypeSentToUser1).Return(nil)
 
 	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
-	for _, k := range photos {
-		s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, k.Key).Return(k.Link, nil)
-	}
-	s.repoMock.EXPECT().ChooseCandidateAndCreatePairAttempt(userId).Return(&models.Profile{
-		UserID:       user2Id,
-		Name:         userName,
-		Gender:       models.GenderMale,
-		Age:          20,
-		Bio:          "bio",
-		LocationLat:  123,
-		LocationLon:  456,
-		LocationName: "Kolbasino neighbourghood",
-	}, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
+	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo2).Return(photo2Link, nil)
 
 	candidate, err := s.service.NextPartner(user1Ctx)
 
 	s.Nil(err)
 	s.Equal(models.ProfileShowcase{
 		Profile: models.Profile{
-			UserID:       user2Id,
-			Name:         userName,
-			Gender:       models.GenderMale,
-			Age:          20,
-			Bio:          "bio",
-			LocationLat:  123,
-			LocationLon:  456,
-			LocationName: "Kolbasino neighbourghood",
+			UserID: user2Id,
+			Age:    19,
 		},
 		Photos: photos,
 	}, candidate)
 }
 
-func (s *ServiceTestSuite) TestSwipe_First_Like() {
-	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: userId, User2: user2Id}, nil)
-	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser1Liked).Return(nil)
-	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{UserID: userId, Name: userName}, nil)
-	s.repoMock.EXPECT().GetUserPhotos(userId).Return([]string{photo1, photo2}, nil)
-	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
-	s.userNotifierMock.EXPECT().NotifyLiked(user2Id, models.LikeNotification{
-		Name:  userName,
-		Photo: photo1Link,
-	}).Return(nil)
+func (s *ServiceTestSuite) TestNextPartner_ReturnsValuableAdvice() {
+	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{
+		UserID: userId,
+	}, nil).Times(2)
+	s.repoMock.EXPECT().GetPreferences(userId).Return(models.Preferences{
+		UserID: userId,
+	}, nil).Times(2)
 
-	err := s.service.Swipe(user1Ctx, user2Id, models.SwipeVerdictLike)
+	s.repoMock.EXPECT().GetPendingPairAttempts(userId).Return([]models.PairAttempt{}, nil)
+	s.repoMock.EXPECT().GetWhoLikedMe(userId).Return(uint64(0), nil)
 
-	s.Nil(err)
-}
+	s.repoMock.EXPECT().GetAllValidUsers().Return([]uint64{}, nil)
 
-func (s *ServiceTestSuite) TestSwipe_First_Dislike() {
-	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: userId, User2: user2Id}, nil)
-	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser1Disliked).Return(nil)
-	s.repoMock.EXPECT().FinishPairAttempt(uint64(1), models.PAStateMismatch).Return(nil)
-
-	err := s.service.Swipe(user1Ctx, user2Id, models.SwipeVerdictDislike)
-
-	s.Nil(err)
-}
-
-func (s *ServiceTestSuite) TestSwipe_Second_Like() {
-	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: user2Id, User2: userId}, nil)
-	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser2Liked).Return(nil)
-	s.repoMock.EXPECT().FinishPairAttempt(uint64(1), models.PAStateMatch).Return(nil)
-	s.repoMock.EXPECT().CreateChat(user2Id, userId).Return(nil)
-
-	s.repoMock.EXPECT().GetProfile(userId).Return(models.Profile{UserID: userId, Name: userName}, nil)
-	s.repoMock.EXPECT().GetUserPhotos(userId).Return([]string{photo1, photo2}, nil)
-	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
-	s.userNotifierMock.EXPECT().NotifyMatch(userId, models.MatchNotification{
-		Name:  userName,
-		Photo: photo1Link,
-	}).Return(nil)
-
-	s.repoMock.EXPECT().GetProfile(user2Id).Return(models.Profile{UserID: user2Id, Name: userName}, nil)
-	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
-	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
-	s.userNotifierMock.EXPECT().NotifyMatch(user2Id, models.MatchNotification{
-		Name:  userName,
-		Photo: photo1Link,
-	}).Return(nil)
-
-	err := s.service.Swipe(user1Ctx, user2Id, models.SwipeVerdictLike)
-
-	s.Nil(err)
-}
-
-func (s *ServiceTestSuite) TestSwipe_Second_Dislike() {
-	s.repoMock.EXPECT().GetPendingPairAttemptByUserPair(userId, user2Id).Return(models.PairAttempt{ID: 1, User1: user2Id, User2: userId}, nil)
-	s.repoMock.EXPECT().CreateEvent(uint64(1), models.PETypeUser2Disliked).Return(nil)
-	s.repoMock.EXPECT().FinishPairAttempt(uint64(1), models.PAStateMismatch).Return(nil)
-
-	err := s.service.Swipe(user1Ctx, user2Id, models.SwipeVerdictDislike)
-
-	s.Nil(err)
+	candidate, err := s.service.NextPartner(user1Ctx)
+	s.Equal("lower your expectations to zero", err.Error())
+	s.Equal(models.ProfileShowcase{}, candidate)
 }

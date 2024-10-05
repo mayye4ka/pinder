@@ -115,7 +115,7 @@ func (s *Server) AddPhoto(ctx context.Context, req *public_api.AddPhotoRequest) 
 }
 
 func (s *Server) DeletePhoto(ctx context.Context, req *public_api.DeletePhotoRequest) (*emptypb.Empty, error) {
-	err := s.service.DeletePhoto(ctx, string(req.PhotoKey))
+	err := s.service.DeletePhoto(ctx, req.PhotoKey)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

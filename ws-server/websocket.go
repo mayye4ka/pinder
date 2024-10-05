@@ -81,6 +81,7 @@ func (i *UserWsNotifier) NotifyLiked(userId uint64, notification models.LikeNoti
 	}
 	return i.notify(userId, ntfc)
 }
+
 func (i *UserWsNotifier) NotifyMatch(userId uint64, notification models.MatchNotification) error {
 	ntfc := &public_api.DataPackage{
 		Data: &public_api.DataPackage_MatchNotification{

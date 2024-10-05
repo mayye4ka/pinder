@@ -2,20 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
+	"math/rand"
+	"sort"
+	"time"
 
 	"github.com/mayye4ka/pinder/models"
 )
-
-func (s *Service) submitNextPartner(ctx context.Context, candidate *models.Profile) (models.ProfileShowcase, error) {
-	photos, err := s.getUserPhotos(ctx, candidate.UserID)
-	if err != nil {
-		return models.ProfileShowcase{}, err
-	}
-	return models.ProfileShowcase{
-		Profile: *candidate,
-		Photos:  photos,
-	}, nil
-}
 
 func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, error) {
 	userId := ctx.Value(userIdContextKey).(uint64)
@@ -23,137 +16,204 @@ func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, erro
 		return models.ProfileShowcase{}, errUnauthenticated
 	}
 
-	candidate, err := s.repository.GetHangingPartner(userId)
+	myProfile, err := s.repository.GetProfile(userId)
 	if err != nil {
 		return models.ProfileShowcase{}, err
 	}
-	if candidate != nil {
-		return s.submitNextPartner(ctx, candidate)
-	}
-
-	candidate, err = s.repository.GetWhoLikedMe(userId)
+	myPrefs, err := s.repository.GetPreferences(userId)
 	if err != nil {
 		return models.ProfileShowcase{}, err
 	}
-
-	if candidate != nil {
-		pa, err := s.repository.GetLatestPairAttempt(candidate.UserID, userId)
-		if err != nil {
-			return models.ProfileShowcase{}, err
-		}
-		err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser2)
-		if err != nil {
-			return models.ProfileShowcase{}, err
-		}
-		return s.submitNextPartner(ctx, candidate)
+	if myProfile.UserID == 0 || myPrefs.UserID == 0 {
+		return models.ProfileShowcase{}, errors.New("incomplete profile")
 	}
 
-	candidate, err = s.repository.ChooseCandidateAndCreatePairAttempt(userId)
+	partner, err := s.submitHangingPartner(ctx, userId)
 	if err != nil {
 		return models.ProfileShowcase{}, err
 	}
-	return s.submitNextPartner(ctx, candidate)
+	if partner != nil {
+		return *partner, nil
+	}
+
+	partner, err = s.submitWhoLikedMe(ctx, userId)
+	if err != nil {
+		return models.ProfileShowcase{}, err
+	}
+	if partner != nil {
+		return *partner, nil
+	}
+
+	partner, err = s.chooseCandidateAndCreateNewPair(ctx, userId)
+	if err != nil {
+		return models.ProfileShowcase{}, err
+	}
+	if partner == nil {
+		return models.ProfileShowcase{}, errors.New("lower your expectations to zero")
+	}
+	return *partner, nil
 }
 
-func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict models.SwipeVerdict) error {
-	userId := ctx.Value(userIdContextKey).(uint64)
-	if userId == 0 {
-		return errUnauthenticated
-	}
-	pa, err := s.repository.GetPendingPairAttemptByUserPair(userId, candidateId)
+func (s *Service) submitHangingPartner(ctx context.Context, userID uint64) (*models.ProfileShowcase, error) {
+	hp, err := s.getHangingPartner(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var eventType models.PEType
-	if swipeVerdict == models.SwipeVerdictLike && pa.User1 == userId {
-		eventType = models.PETypeUser1Liked
-	} else if swipeVerdict == models.SwipeVerdictDislike && pa.User1 == userId {
-		eventType = models.PETypeUser1Disliked
-	} else if swipeVerdict == models.SwipeVerdictLike && pa.User2 == userId {
-		eventType = models.PETypeUser2Liked
-	} else if swipeVerdict == models.SwipeVerdictDislike && pa.User2 == userId {
-		eventType = models.PETypeUser2Disliked
+	if hp == 0 {
+		return nil, nil
 	}
-	err = s.repository.CreateEvent(pa.ID, eventType)
+	prof, err := s.createProfileShowcase(ctx, hp)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	if swipeVerdict == models.SwipeVerdictDislike {
-		return s.repository.FinishPairAttempt(pa.ID, models.PAStateMismatch)
-	}
-	if pa.User1 == userId {
-		err = s.notifyLikedUser(ctx, userId, pa.User2)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = s.notifyMatch(ctx, pa.User1, pa.User2)
-		if err != nil {
-			return err
-		}
-		err = s.repository.FinishPairAttempt(pa.ID, models.PAStateMatch)
-		if err != nil {
-			return err
-		}
-		err = s.repository.CreateChat(pa.User1, pa.User2)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return &prof, nil
 }
 
-func (s *Service) notifyLikedUser(ctx context.Context, whoLiked, whomLiked uint64) error {
-	prof, err := s.repository.GetProfile(whoLiked)
+func (s *Service) submitWhoLikedMe(ctx context.Context, userID uint64) (*models.ProfileShowcase, error) {
+	liker, err := s.repository.GetWhoLikedMe(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	photos, err := s.repository.GetUserPhotos(whoLiked)
+	if liker == 0 {
+		return nil, nil
+	}
+	pa, err := s.repository.GetLatestPairAttempt(liker, userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
+	err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser2)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = s.userNotifier.NotifyLiked(whomLiked, models.LikeNotification{
-		Name:  prof.Name,
-		Photo: link,
-	})
+	prof, err := s.createProfileShowcase(ctx, liker)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &prof, nil
 }
 
-func (s *Service) notifyMatch(ctx context.Context, user1, user2 uint64) error {
-	err := s.oneDirectionalNotifyMatch(ctx, user1, user2)
+func (s *Service) createProfileShowcase(ctx context.Context, candidateId uint64) (models.ProfileShowcase, error) {
+	profile, err := s.repository.GetProfile(candidateId)
 	if err != nil {
-		return err
+		return models.ProfileShowcase{}, err
 	}
-	return s.oneDirectionalNotifyMatch(ctx, user2, user1)
+	photos, err := s.getUserPhotos(ctx, candidateId)
+	if err != nil {
+		return models.ProfileShowcase{}, err
+	}
+	return models.ProfileShowcase{
+		Profile: profile,
+		Photos:  photos,
+	}, nil
 }
 
-func (s *Service) oneDirectionalNotifyMatch(ctx context.Context, sender, receiver uint64) error {
-	prof, err := s.repository.GetProfile(sender)
+func (s *Service) getHangingPartner(userID uint64) (uint64, error) {
+	pas, err := s.repository.GetPendingPairAttempts(userID)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	photos, err := s.repository.GetUserPhotos(sender)
+	for _, pa := range pas {
+		le, err := s.repository.GetLastEvent(pa.ID)
+		if err != nil {
+			return 0, err
+		}
+		if le.EventType == models.PETypeSentToUser1 {
+			return pa.User2, nil
+		}
+	}
+	return 0, nil
+}
+
+func (s *Service) chooseCandidateAndCreateNewPair(ctx context.Context, userId uint64) (*models.ProfileShowcase, error) {
+	candidate, err := s.chooseCandidate(userId)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
+	if candidate == 0 {
+		return nil, nil
+	}
+	pa, err := s.repository.CreatePairAttempt(userId, candidate)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = s.userNotifier.NotifyMatch(receiver, models.MatchNotification{
-		Name:  prof.Name,
-		Photo: link,
-	})
+	err = s.repository.CreateEvent(pa.ID, models.PETypePACreated)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser1)
+	if err != nil {
+		return nil, err
+	}
+	prof, err := s.createProfileShowcase(ctx, candidate)
+	if err != nil {
+		return nil, err
+	}
+	return &prof, nil
+}
+
+func (s *Service) chooseCandidate(userId uint64) (uint64, error) {
+	ids, err := s.repository.GetAllValidUsers()
+	if err != nil {
+		return 0, err
+	}
+	myPref, err := s.repository.GetPreferences(userId)
+	if err != nil {
+		return 0, err
+	}
+	myProf, err := s.repository.GetProfile(userId)
+	if err != nil {
+		return 0, err
+	}
+	candidates := []uint64{}
+	for _, id := range ids {
+		pref, err := s.repository.GetPreferences(id)
+		if err != nil {
+			return 0, err
+		}
+		prof, err := s.repository.GetProfile(id)
+		if err != nil {
+			return 0, err
+		}
+		if !myPref.ProfileMatches(prof) || !pref.ProfileMatches(myProf) {
+			continue
+		}
+		pa, _ := s.repository.GetPendingPairAttemptByUserPair(userId, id)
+		if pa.ID != 0 {
+			continue
+		}
+		candidates = append(candidates, id)
+	}
+	noShows := []uint64{}
+	withLike := []uint64{}
+	withDislike := []uint64{}
+	latestPaTime := map[uint64]time.Time{}
+	for _, id := range candidates {
+		pa, _ := s.repository.GetLatestPairAttemptByUserPair(userId, id)
+		if pa.ID == 0 {
+			noShows = append(noShows, id)
+			continue
+		}
+		if pa.State == models.PAStateMatch {
+			withLike = append(withLike, id)
+		} else {
+			withDislike = append(withDislike, id)
+		}
+		latestPaTime[getWhoIsNotMe(pa.User1, pa.User2, userId)] = pa.CreatedAt
+	}
+	if len(noShows) > 0 {
+		return noShows[rand.Intn(len(noShows))], nil
+	}
+	if len(withDislike) > 0 {
+		sort.Slice(withDislike, func(i, j int) bool {
+			return latestPaTime[withDislike[i]].Before(latestPaTime[withDislike[j]])
+		})
+		return withDislike[0], nil
+	}
+	if len(withLike) > 0 {
+		sort.Slice(withLike, func(i, j int) bool {
+			return latestPaTime[withLike[i]].Before(latestPaTime[withLike[j]])
+		})
+		return withLike[0], nil
+	}
+	return 0, nil
 }

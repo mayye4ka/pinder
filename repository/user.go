@@ -119,40 +119,28 @@ func (r *Repository) PutPreferences(preferences models.Preferences) error {
 	return res.Error
 }
 
-// TODO: should be deprecated
-type Candidate struct {
-	ID          uint64
-	Profile     models.Profile
-	Preferences models.Preferences
-}
-
-func (r *Repository) getAllCandidates() ([]Candidate, error) {
-	var profiles []models.Profile
-	// TODO: map
+func (r *Repository) GetAllValidUsers() ([]uint64, error) {
+	var profiles []Profile
 	res := r.db.Model(&Profile{}).Find(&profiles)
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	var prefs []models.Preferences
+	var prefs []Preferences
 	res = r.db.Model(&Preferences{}).Find(&prefs)
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	profMap := map[uint64]models.Profile{}
+	hasProfile := map[uint64]bool{}
 	for _, p := range profiles {
-		profMap[p.UserID] = p
+		hasProfile[p.UserID] = true
 	}
-	cands := []Candidate{}
-	for _, pref := range prefs {
-		if prof, ok := profMap[pref.UserID]; ok {
-			cands = append(cands, Candidate{
-				ID:          pref.UserID,
-				Profile:     prof,
-				Preferences: pref,
-			})
+	ids := []uint64{}
+	for _, p := range prefs {
+		if hasProfile[p.UserID] {
+			ids = append(ids, p.UserID)
 		}
 	}
-	return cands, nil
+	return ids, nil
 }
 
 func mapUser(user User) models.User {

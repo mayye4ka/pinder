@@ -54,21 +54,6 @@ func (mr *MockRepositoryMockRecorder) AddPhoto(userID, photoKey any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPhoto", reflect.TypeOf((*MockRepository)(nil).AddPhoto), userID, photoKey)
 }
 
-// ChooseCandidateAndCreatePairAttempt mocks base method.
-func (m *MockRepository) ChooseCandidateAndCreatePairAttempt(userID uint64) (*models.Profile, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChooseCandidateAndCreatePairAttempt", userID)
-	ret0, _ := ret[0].(*models.Profile)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ChooseCandidateAndCreatePairAttempt indicates an expected call of ChooseCandidateAndCreatePairAttempt.
-func (mr *MockRepositoryMockRecorder) ChooseCandidateAndCreatePairAttempt(userID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChooseCandidateAndCreatePairAttempt", reflect.TypeOf((*MockRepository)(nil).ChooseCandidateAndCreatePairAttempt), userID)
-}
-
 // CreateChat mocks base method.
 func (m *MockRepository) CreateChat(user1, user2 uint64) error {
 	m.ctrl.T.Helper()
@@ -97,6 +82,21 @@ func (mr *MockRepositoryMockRecorder) CreateEvent(PAID, eventType any) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateEvent", reflect.TypeOf((*MockRepository)(nil).CreateEvent), PAID, eventType)
 }
 
+// CreatePairAttempt mocks base method.
+func (m *MockRepository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePairAttempt", user1, user2)
+	ret0, _ := ret[0].(models.PairAttempt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePairAttempt indicates an expected call of CreatePairAttempt.
+func (mr *MockRepositoryMockRecorder) CreatePairAttempt(user1, user2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePairAttempt", reflect.TypeOf((*MockRepository)(nil).CreatePairAttempt), user1, user2)
+}
+
 // DeleteUserPhoto mocks base method.
 func (m *MockRepository) DeleteUserPhoto(userID uint64, photoKey string) error {
 	m.ctrl.T.Helper()
@@ -123,6 +123,21 @@ func (m *MockRepository) FinishPairAttempt(PAID uint64, PAState models.PAState) 
 func (mr *MockRepositoryMockRecorder) FinishPairAttempt(PAID, PAState any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinishPairAttempt", reflect.TypeOf((*MockRepository)(nil).FinishPairAttempt), PAID, PAState)
+}
+
+// GetAllValidUsers mocks base method.
+func (m *MockRepository) GetAllValidUsers() ([]uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllValidUsers")
+	ret0, _ := ret[0].([]uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllValidUsers indicates an expected call of GetAllValidUsers.
+func (mr *MockRepositoryMockRecorder) GetAllValidUsers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllValidUsers", reflect.TypeOf((*MockRepository)(nil).GetAllValidUsers))
 }
 
 // GetChat mocks base method.
@@ -155,19 +170,19 @@ func (mr *MockRepositoryMockRecorder) GetChats(userID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChats", reflect.TypeOf((*MockRepository)(nil).GetChats), userID)
 }
 
-// GetHangingPartner mocks base method.
-func (m *MockRepository) GetHangingPartner(userID uint64) (*models.Profile, error) {
+// GetLastEvent mocks base method.
+func (m *MockRepository) GetLastEvent(PAID uint64) (models.PairEvent, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHangingPartner", userID)
-	ret0, _ := ret[0].(*models.Profile)
+	ret := m.ctrl.Call(m, "GetLastEvent", PAID)
+	ret0, _ := ret[0].(models.PairEvent)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetHangingPartner indicates an expected call of GetHangingPartner.
-func (mr *MockRepositoryMockRecorder) GetHangingPartner(userID any) *gomock.Call {
+// GetLastEvent indicates an expected call of GetLastEvent.
+func (mr *MockRepositoryMockRecorder) GetLastEvent(PAID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHangingPartner", reflect.TypeOf((*MockRepository)(nil).GetHangingPartner), userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastEvent", reflect.TypeOf((*MockRepository)(nil).GetLastEvent), PAID)
 }
 
 // GetLatestPairAttempt mocks base method.
@@ -183,6 +198,21 @@ func (m *MockRepository) GetLatestPairAttempt(user1, user2 uint64) (models.PairA
 func (mr *MockRepositoryMockRecorder) GetLatestPairAttempt(user1, user2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPairAttempt", reflect.TypeOf((*MockRepository)(nil).GetLatestPairAttempt), user1, user2)
+}
+
+// GetLatestPairAttemptByUserPair mocks base method.
+func (m *MockRepository) GetLatestPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestPairAttemptByUserPair", user1, user2)
+	ret0, _ := ret[0].(models.PairAttempt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestPairAttemptByUserPair indicates an expected call of GetLatestPairAttemptByUserPair.
+func (mr *MockRepositoryMockRecorder) GetLatestPairAttemptByUserPair(user1, user2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestPairAttemptByUserPair", reflect.TypeOf((*MockRepository)(nil).GetLatestPairAttemptByUserPair), user1, user2)
 }
 
 // GetMessage mocks base method.
@@ -246,6 +276,21 @@ func (mr *MockRepositoryMockRecorder) GetPendingPairAttemptByUserPair(user1, use
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingPairAttemptByUserPair", reflect.TypeOf((*MockRepository)(nil).GetPendingPairAttemptByUserPair), user1, user2)
 }
 
+// GetPendingPairAttempts mocks base method.
+func (m *MockRepository) GetPendingPairAttempts(user1ID uint64) ([]models.PairAttempt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPendingPairAttempts", user1ID)
+	ret0, _ := ret[0].([]models.PairAttempt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPendingPairAttempts indicates an expected call of GetPendingPairAttempts.
+func (mr *MockRepositoryMockRecorder) GetPendingPairAttempts(user1ID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingPairAttempts", reflect.TypeOf((*MockRepository)(nil).GetPendingPairAttempts), user1ID)
+}
+
 // GetPreferences mocks base method.
 func (m *MockRepository) GetPreferences(arg0 uint64) (models.Preferences, error) {
 	m.ctrl.T.Helper()
@@ -307,10 +352,10 @@ func (mr *MockRepositoryMockRecorder) GetUserPhotos(userID any) *gomock.Call {
 }
 
 // GetWhoLikedMe mocks base method.
-func (m *MockRepository) GetWhoLikedMe(userID uint64) (*models.Profile, error) {
+func (m *MockRepository) GetWhoLikedMe(userID uint64) (uint64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetWhoLikedMe", userID)
-	ret0, _ := ret[0].(*models.Profile)
+	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

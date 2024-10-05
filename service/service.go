@@ -30,14 +30,17 @@ type Repository interface {
 	DeleteUserPhoto(userID uint64, photoKey string) error
 	GetPreferences(uint64) (models.Preferences, error)
 	PutPreferences(models.Preferences) error
+	GetAllValidUsers() ([]uint64, error)
 
-	GetHangingPartner(userID uint64) (*models.Profile, error)
-	GetWhoLikedMe(userID uint64) (*models.Profile, error)
-	ChooseCandidateAndCreatePairAttempt(userID uint64) (*models.Profile, error)
+	GetPendingPairAttempts(user1ID uint64) ([]models.PairAttempt, error)
+	GetWhoLikedMe(userID uint64) (uint64, error)
 	CreateEvent(PAID uint64, eventType models.PEType) error
 	GetLatestPairAttempt(user1, user2 uint64) (models.PairAttempt, error)
+	GetLatestPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error)
 	GetPendingPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error)
+	CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error)
 	FinishPairAttempt(PAID uint64, PAState models.PAState) error
+	GetLastEvent(PAID uint64) (models.PairEvent, error)
 
 	CreateChat(user1, user2 uint64) error
 	GetChats(userID uint64) ([]models.Chat, error)
