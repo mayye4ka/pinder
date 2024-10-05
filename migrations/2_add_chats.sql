@@ -3,7 +3,7 @@ CREATE TABLE chats(
     id int NOT NULL AUTO_INCREMENT,
     user1 int NOT NULL,
     user2 int NOT NULL,
-    PRIMARY KEY(chat_id)
+    PRIMARY KEY(id)
 );
 CREATE TABLE messages(
     id int NOT NULL AUTO_INCREMENT,
