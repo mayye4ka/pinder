@@ -15,10 +15,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.1'
-      - name: Configure git for private modules
-        run: git config --global url."https://${USER}:${TOKEN}@github.com/mayye4ka".insteadOf "https://github.com/mayye4ka"
-      - name: ECHO
-        run: go get github.com/mayye4ka/pinder-api@v1.2.0
+      - name: Configure git for https
+        run: git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+      - name: clone
+        run: git clone https://github.com/mayye4ka/pinder-api
       - name: Install dependencies
         run: go mod download
       - name: Build
