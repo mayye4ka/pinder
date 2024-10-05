@@ -3,7 +3,7 @@ on:
     push:
         branches: ['*']
 env:
-  GOPRIVATE: github.com/mayye4ka/*
+  GOPRIVATE: github.com/mayye4ka
   USER: ${{ github.actor }}
   TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
@@ -17,6 +17,8 @@ jobs:
           go-version: '1.23.1'
       - name: Configure git for private modules
         run: git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
+      - name: ECHO
+        run: echo ${USER}:${TOKEN}
       - name: Install dependencies
         run: go mod download
       - name: Build
