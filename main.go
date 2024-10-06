@@ -2,7 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/mayye4ka/pinder/authenticator"
 	"github.com/mayye4ka/pinder/file_storage"
@@ -38,7 +41,7 @@ func getMinio(config Config) (*minio.Client, error) {
 		Secure: false,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get minio: %w", err)
 	}
 	return minioClient, nil
 }
@@ -50,17 +53,17 @@ func getDb(config Config) (*gorm.DB, error) {
 
 	mgrDb, err := sql.Open("mysql", config.DbDsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get mysql: %w", err)
 	}
 
 	_, err = migrate.Exec(mgrDb, "mysql", migrations, migrate.Up)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get mysql: %w", err)
 	}
 
 	db, err := gorm.Open(mysql.Open(config.DbDsn), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get mysql: %w", err)
 	}
 	return db, nil
 }
@@ -68,15 +71,22 @@ func getDb(config Config) (*gorm.DB, error) {
 func getRabbitMq(config Config) (*amqp.Connection, error) {
 	conn, err := amqp.Dial(config.RabbitMqDsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't get rabbit: %w", err)
 	}
 	return conn, nil
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal(err)
+	skipEnvLoad := false
+	_, err := os.Open(".env")
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		skipEnvLoad = true
+	}
+	if skipEnvLoad {
+		err = godotenv.Load()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	var config Config
 	err = env.Parse(&config)
