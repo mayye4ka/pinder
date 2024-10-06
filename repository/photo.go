@@ -18,12 +18,16 @@ func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
 }
 
 func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
-	var photos []string
-	res := r.db.Model(&Photo{}).Select("photo_key").Where("user_id = ?", userID).Find(photos)
+	var photos []Photo
+	res := r.db.Model(&Photo{}).Where("user_id = ?", userID).Find(&photos)
 	if res.Error != nil {
 		return nil, res.Error
 	}
-	return photos, nil
+	result := make([]string, len(photos))
+	for i, photo := range photos {
+		result[i] = photo.PhotoKey
+	}
+	return result, nil
 }
 
 func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
