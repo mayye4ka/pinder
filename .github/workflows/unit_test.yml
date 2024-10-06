@@ -22,7 +22,7 @@ jobs:
       - name: echo3
         run: go env GOPRIVATE
       - name: Configure git for private repos
-        run: git config --global url."https://${USER}:${TOKEN}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://${USER}:${TOKEN_SECRET}@github.com/".insteadOf "https://github.com/"
       - name: List config
         run: git config --global --list
       - name: Install dependencies
