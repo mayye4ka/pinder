@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +11,7 @@ import (
 	public_api "github.com/mayye4ka/pinder-api/public_api/go"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -34,9 +35,13 @@ func New(svc Service, auth Authenticator) *ServerCtrl {
 }
 
 func (c *ServerCtrl) Start(port int) error {
+	creds, err := loadTLSCredentials()
+	if err != nil {
+		return err
+	}
 	opts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(c.authInterceptor),
-		grpc.Creds(insecure.NewCredentials()),
+		grpc.Creds(creds),
 	}
 	srv := grpc.NewServer(opts...)
 	public_api.RegisterPinderServer(srv, c.server)
@@ -74,4 +79,18 @@ func (c *ServerCtrl) getTokenFromIncomingContext(ctx context.Context) string {
 		return ""
 	}
 	return strings.TrimPrefix(md[metadataContextKey][0], authorizationTrimPrefix)
+}
+
+func loadTLSCredentials() (credentials.TransportCredentials, error) {
+	serverCert, err := tls.LoadX509KeyPair(".tls/server-cert.pem", ".tls/server-key.pem")
+	if err != nil {
+		return nil, err
+	}
+
+	config := &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.NoClientCert,
+	}
+
+	return credentials.NewTLS(config), nil
 }
