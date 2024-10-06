@@ -104,7 +104,7 @@ func (r *Repository) PutProfile(profile models.Profile) error {
 
 func (r *Repository) GetPreferences(userID uint64) (models.Preferences, error) {
 	var preferences Preferences
-	res := r.db.Select(&Preferences{}).Where("user_id=?", userID).First(&preferences)
+	res := r.db.Model(&Preferences{}).Where("user_id=?", userID).First(&preferences)
 	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return models.Preferences{}, nil
 	} else if res.Error != nil {
