@@ -19,7 +19,7 @@ func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
 
 func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
 	var photos []string
-	res := r.db.Select("photo_key").Where("user_id = ?", userID).Find(photos)
+	res := r.db.Model(&Photo{}).Select("photo_key").Where("user_id = ?", userID).Find(photos)
 	if res.Error != nil {
 		return nil, res.Error
 	}
