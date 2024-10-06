@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
+
+	"gorm.io/gorm"
 )
 
 type MessageTranscription struct {
@@ -17,7 +18,7 @@ func (MessageTranscription) TableName() string {
 func (r *Repository) GetMessageTranscription(msgID uint64) (string, bool, error) {
 	var t MessageTranscription
 	res := r.db.Model(&MessageTranscription{}).Where("message_id = ?", msgID).First(&t)
-	if res.Error != nil && errors.Is(res.Error, sql.ErrNoRows) {
+	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return "", false, nil
 	} else if res.Error != nil {
 		return "", false, res.Error

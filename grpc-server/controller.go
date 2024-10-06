@@ -82,7 +82,7 @@ func (c *ServerCtrl) getTokenFromIncomingContext(ctx context.Context) string {
 }
 
 func loadTLSCredentials() (credentials.TransportCredentials, error) {
-	serverCert, err := tls.LoadX509KeyPair(".tls/domain.cert", ".tls/domain.key")
+	serverCert, err := tls.LoadX509KeyPair(".tls/domain.crt", ".tls/domain.key")
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
 	"time"
 
 	"github.com/mayye4ka/pinder/models"
+	"gorm.io/gorm"
 )
 
 type PairAttempt struct {
@@ -88,7 +88,7 @@ func (r *Repository) GetWhoLikedMe(userID uint64) (uint64, error) {
 	res := r.db.Model(&PairAttempt{}).
 		Where("user2 = ? and state = ?", userID, PAStatePending).
 		Order("created_at").First(&pair)
-	if res.Error != nil && !errors.Is(res.Error, sql.ErrNoRows) {
+	if res.Error != nil && !errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return 0, res.Error
 	} else if res.Error != nil {
 		return 0, nil

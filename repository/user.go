@@ -1,11 +1,11 @@
 package repository
 
 import (
-	"database/sql"
 	"errors"
 
 	"github.com/mayye4ka/pinder/models"
 
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -88,7 +88,7 @@ func (r *Repository) GetUser(id uint64) (models.User, error) {
 func (r *Repository) GetProfile(userID uint64) (models.Profile, error) {
 	var profile Profile
 	res := r.db.Model(&Profile{}).Where("user_id=?", userID).First(&profile)
-	if res.Error != nil && errors.Is(res.Error, sql.ErrNoRows) {
+	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return models.Profile{}, nil
 	} else if res.Error != nil {
 		return models.Profile{}, res.Error
@@ -105,7 +105,7 @@ func (r *Repository) PutProfile(profile models.Profile) error {
 func (r *Repository) GetPreferences(userID uint64) (models.Preferences, error) {
 	var preferences Preferences
 	res := r.db.Select(&Preferences{}).Where("user_id=?", userID).First(&preferences)
-	if res.Error != nil && errors.Is(res.Error, sql.ErrNoRows) {
+	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return models.Preferences{}, nil
 	} else if res.Error != nil {
 		return models.Preferences{}, res.Error
