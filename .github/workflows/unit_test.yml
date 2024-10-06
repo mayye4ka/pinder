@@ -6,6 +6,7 @@ env:
   GOPRIVATE: github.com/mayye4ka
   USER: ${{ github.actor }}
   TOKEN: ${{ github.token }}
+  TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
