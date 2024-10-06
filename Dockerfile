@@ -1,6 +1,8 @@
+FROM golang:1.23.1
 ARG USER
 ARG TOKEN
-FROM golang:1.23.1
+ENV USER=${USER}
+ENV TOKEN=${TOKEN}
 WORKDIR /app
 ENV GOPRIVATE=github.com/mayye4ka
 RUN git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
