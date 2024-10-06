@@ -5,7 +5,7 @@ on:
 env:
   GOPRIVATE: github.com/mayye4ka
   USER: ${{ github.actor }}
-  TOKEN: ${{ github.token }}
+  TOKEN: ${{ secrets.TOKEN_SECRET }}
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
@@ -35,8 +35,8 @@ jobs:
         with:
             registry: ghcr.io
             username: ${{github.actor}}
-            password: ${{secrets.GITHUB_TOKEN}}
+            password: ${{secrets.TOKEN_SECRET}}
       - name: Build image
-        run: docker build --tag ghcr.io/mayye4ka/pinder:${{ github.ref_name }} .
+        run: docker build --tag ghcr.io/mayye4ka/pinder:${{ github.ref_name }} --build-arg user=$USER,token=$TOKEN .
       - name: Push image
         run: docker push ghcr.io/mayye4ka/pinder:${{ github.ref_name }}
