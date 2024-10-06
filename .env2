@@ -1,0 +1,7 @@
+MINIO_ENDPOINT=192.168.3.22:9000
+MINIO_AK=z9G2XaEQjYIvapPufd5p
+MINIO_SK=jaS7nw3H9wmR5ymnZCRIULNin1IXOnINb0XLfQQq
+DB_DSN=root:123@tcp(192.168.3.22:3306)/pinder?charset=utf8mb4&parseTime=True&loc=Local
+RABBIT_MQ_DSN=amqp://guest:guest@192.168.3.22:5672
+GRPC_PORT=8080
+WS_PORT=8081

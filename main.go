@@ -82,7 +82,7 @@ func main() {
 	if err != nil && errors.Is(err, os.ErrNotExist) {
 		skipEnvLoad = true
 	}
-	if skipEnvLoad {
+	if !skipEnvLoad {
 		err = godotenv.Load()
 		if err != nil {
 			log.Fatal(err)
