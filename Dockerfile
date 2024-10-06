@@ -1,9 +1,9 @@
-ARG user
-ARG token
+ARG USER
+ARG TOKEN
 FROM golang:1.23.1
 WORKDIR /app
 ENV GOPRIVATE=github.com/mayye4ka
-RUN git config --global url."https://$user:$token@github.com".insteadOf "https://github.com"
+RUN git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "https://github.com"
 COPY go.mod go.sum ./
 RUN go mod download
 COPY ./ ./
