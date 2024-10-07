@@ -78,7 +78,7 @@ func (r *Repository) GetLatestPairAttemptByUserPair(user1, user2 uint64) (models
 }
 
 func (r *Repository) FinishPairAttempt(PAID uint64, state models.PAState) error {
-	res := r.db.Model(&PairAttempt{}).Where("id = ?", PAID).Update("state = ?", unmapPaState(state))
+	res := r.db.Model(&PairAttempt{}).Where("id = ?", PAID).Update("state", unmapPaState(state))
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't finish pair attempt")
 		return &errs.CodableError{
