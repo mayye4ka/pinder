@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/mayye4ka/pinder/models"
+	"github.com/rs/zerolog"
 	gomock "go.uber.org/mock/gomock"
 
 	"github.com/stretchr/testify/assert"
@@ -23,18 +24,6 @@ var (
 func TestGetPassHash(t *testing.T) {
 	hash := getPassHash(password)
 	assert.Equal(t, passHash, hash)
-}
-
-func TestCreateToken(t *testing.T) {
-	token, err := createToken(userId)
-	assert.Nil(t, err)
-	assert.Equal(t, token, token)
-}
-
-func TestUnpackToken(t *testing.T) {
-	uid, err := unpackToken(token)
-	assert.Nil(t, err)
-	assert.Equal(t, userId, uid)
 }
 
 type AuthenticatorTestSuite struct {
@@ -62,7 +51,6 @@ func (s *AuthenticatorTestSuite) TestLoginUser() {
 }
 
 func (s *AuthenticatorTestSuite) TestUnpackToken() {
-
 	id, err := s.authenticator.UnpackToken(testCtx, token)
 
 	s.Nil(err)
@@ -72,7 +60,8 @@ func (s *AuthenticatorTestSuite) TestUnpackToken() {
 func (s *AuthenticatorTestSuite) SetupTest() {
 	ctrl := gomock.NewController(s.T())
 	s.repoMock = NewMockRepository(ctrl)
-	s.authenticator = New(s.repoMock)
+	l := zerolog.Nop()
+	s.authenticator = New(s.repoMock, &l)
 }
 
 func TestAuthenticator(t *testing.T) {

@@ -1,7 +1,11 @@
 package repository
 
 import (
+	"errors"
+
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
+	"gorm.io/gorm"
 )
 
 type Chat struct {
@@ -20,14 +24,25 @@ func (r *Repository) CreateChat(user1, user2 uint64) error {
 		User2: user2,
 	}
 	res := r.db.Create(&chat)
-	return res.Error
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't create chat")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't create chat",
+		}
+	}
+	return nil
 }
 
 func (r *Repository) GetChats(userID uint64) ([]models.Chat, error) {
 	var chats []Chat
 	res := r.db.Model(&Chat{}).Where("user_1 = ? or user_2 = ?", userID, userID).Find(&chats)
 	if res.Error != nil {
-		return nil, res.Error
+		r.logger.Err(res.Error).Msg("can't get chats")
+		return nil, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get chats",
+		}
 	}
 	return mapChats(chats), nil
 }
@@ -36,7 +51,17 @@ func (r *Repository) GetChat(id uint64) (models.Chat, error) {
 	var chat Chat
 	res := r.db.Model(&Chat{}).Where("id = ?", id).Find(&chat)
 	if res.Error != nil {
-		return models.Chat{}, res.Error
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return models.Chat{}, &errs.CodableError{
+				Code:    errs.CodeNotFound,
+				Message: "no such chat",
+			}
+		}
+		r.logger.Err(res.Error).Msg("can't find chat")
+		return models.Chat{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't find chat",
+		}
 	}
 	return mapChat(chat), nil
 }

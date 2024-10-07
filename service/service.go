@@ -2,16 +2,22 @@ package service
 
 import (
 	"context"
-	"errors"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 )
 
 const userIdContextKey = "user_id"
 
 var (
-	errUnauthenticated  = errors.New("unauthenticated")
-	errPermissionDenied = errors.New("permission denied")
+	errUnauthenticated = &errs.CodableError{
+		Code:    errs.CodePermissionDenied,
+		Message: "unauthenticated for this endpoint",
+	}
+	errPermissionDenied = &errs.CodableError{
+		Code:    errs.CodePermissionDenied,
+		Message: "no permissions for this action",
+	}
 )
 
 type Service struct {
@@ -22,7 +28,6 @@ type Service struct {
 }
 
 type Repository interface {
-	GetUser(id uint64) (models.User, error)
 	GetProfile(uint64) (models.Profile, error)
 	PutProfile(models.Profile) error
 	AddPhoto(userID uint64, photoKey string) error

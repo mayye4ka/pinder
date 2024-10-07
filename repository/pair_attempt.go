@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 	"gorm.io/gorm"
 )
@@ -34,7 +35,11 @@ func (r *Repository) GetLatestPairAttempt(user1, user2 uint64) (models.PairAttem
 		Where("user1 = ? and user2 = ?", user1, user2).
 		Order("created_at desc").First(&pair)
 	if res.Error != nil {
-		return models.PairAttempt{}, res.Error
+		r.logger.Err(res.Error).Msg("can't latest pair attempt")
+		return models.PairAttempt{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get latest pair attempt",
+		}
 	}
 	return mapPairAttempt(pair), nil
 }
@@ -46,7 +51,11 @@ func (r *Repository) GetPendingPairAttemptByUserPair(user1, user2 uint64) (model
 			user1, user2, user1, user2, models.PAStatePending).
 		First(&pair)
 	if res.Error != nil {
-		return models.PairAttempt{}, res.Error
+		r.logger.Err(res.Error).Msg("can't get pending pa for this pair")
+		return models.PairAttempt{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get pending pa for this pair",
+		}
 	}
 	return mapPairAttempt(pair), nil
 }
@@ -59,14 +68,25 @@ func (r *Repository) GetLatestPairAttemptByUserPair(user1, user2 uint64) (models
 		Order("created_at desc").
 		First(&pair)
 	if res.Error != nil {
-		return models.PairAttempt{}, res.Error
+		r.logger.Err(res.Error).Msg("can't get latest pa for this pair")
+		return models.PairAttempt{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get latest pa for this pair",
+		}
 	}
 	return mapPairAttempt(pair), nil
 }
 
 func (r *Repository) FinishPairAttempt(PAID uint64, state models.PAState) error {
 	res := r.db.Model(&PairAttempt{}).Where("id = ?", PAID).Update("state = ?", unmapPaState(state))
-	return res.Error
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't finish pair attempt")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't finish pair attempt",
+		}
+	}
+	return nil
 }
 
 func (r *Repository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error) {
@@ -78,7 +98,11 @@ func (r *Repository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt,
 	}
 	res := r.db.Create(&pa)
 	if res.Error != nil {
-		return models.PairAttempt{}, res.Error
+		r.logger.Err(res.Error).Msg("can't create pair attempt")
+		return models.PairAttempt{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't create pair attempt",
+		}
 	}
 	return mapPairAttempt(pa), nil
 }
@@ -88,10 +112,15 @@ func (r *Repository) GetWhoLikedMe(userID uint64) (uint64, error) {
 	res := r.db.Model(&PairAttempt{}).
 		Where("user2 = ? and state = ?", userID, PAStatePending).
 		Order("created_at").First(&pair)
-	if res.Error != nil && !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return 0, res.Error
-	} else if res.Error != nil {
-		return 0, nil
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+		r.logger.Err(res.Error).Msg("can't get who likes you")
+		return 0, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get who likes you",
+		}
 	}
 	return pair.User1, nil
 }
@@ -102,7 +131,11 @@ func (r *Repository) GetPendingPairAttempts(user1ID uint64) ([]models.PairAttemp
 		Where("user1 = ? and state = ?", user1ID, PAStatePending).
 		Find(&pas)
 	if res.Error != nil {
-		return nil, res.Error
+		r.logger.Err(res.Error).Msg("can't get pending pair attempts")
+		return nil, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get pending pair attempts",
+		}
 	}
 	return mapPairAttempts(pas), nil
 }

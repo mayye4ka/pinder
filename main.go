@@ -14,6 +14,7 @@ import (
 	"github.com/mayye4ka/pinder/service"
 	"github.com/mayye4ka/pinder/stt"
 	ws_server "github.com/mayye4ka/pinder/ws-server"
+	"github.com/rs/zerolog"
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
@@ -106,12 +107,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logger := zerolog.New(os.Stdout)
 
 	fileStorage := file_storage.New(minio)
-	repository := repository.New(db)
+	repository := repository.New(db, &logger)
 	stt := stt.New(rabbit)
 
-	auth := authenticator.New(repository)
+	auth := authenticator.New(repository, &logger)
 	notifier := ws_server.NewUserWsNotifier(auth)
 	svc := service.New(repository, fileStorage, notifier, stt)
 

@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 
 	"gorm.io/gorm"
@@ -62,7 +63,17 @@ func (r *Repository) CreateUser(phoneNumber, passHash string) (models.User, erro
 	}
 	res := r.db.Create(&user)
 	if res.Error != nil {
-		return models.User{}, res.Error
+		if errors.Is(res.Error, gorm.ErrDuplicatedKey) {
+			return models.User{}, &errs.CodableError{
+				Code:    errs.CodeInvalidInput,
+				Message: "user with same phone number already exists",
+			}
+		}
+		r.logger.Err(res.Error).Msg("can't create user")
+		return models.User{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't create user",
+		}
 	}
 	return mapUser(user), nil
 }
@@ -71,16 +82,17 @@ func (r *Repository) GetUserByCreds(phoneNumber, passHash string) (models.User, 
 	var user User
 	res := r.db.Model(&User{}).Where("phone_number = ? and pass_hash = ?", phoneNumber, passHash).First(&user)
 	if res.Error != nil {
-		return models.User{}, res.Error
-	}
-	return mapUser(user), nil
-}
-
-func (r *Repository) GetUser(id uint64) (models.User, error) {
-	var user User
-	res := r.db.Model(&User{}).Where("id = ?", id).First(&user)
-	if res.Error != nil {
-		return models.User{}, res.Error
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return models.User{}, &errs.CodableError{
+				Code:    errs.CodeNotFound,
+				Message: "invalid phone / password",
+			}
+		}
+		r.logger.Err(res.Error).Msg("can't get user")
+		return models.User{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get user",
+		}
 	}
 	return mapUser(user), nil
 }
@@ -91,7 +103,11 @@ func (r *Repository) GetProfile(userID uint64) (models.Profile, error) {
 	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return models.Profile{}, nil
 	} else if res.Error != nil {
-		return models.Profile{}, res.Error
+		r.logger.Err(res.Error).Msg("can't get profile")
+		return models.Profile{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get profile",
+		}
 	}
 	return mapProfile(profile), nil
 }
@@ -99,7 +115,14 @@ func (r *Repository) GetProfile(userID uint64) (models.Profile, error) {
 func (r *Repository) PutProfile(profile models.Profile) error {
 	prof := unmapProfile(profile)
 	res := r.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&prof)
-	return res.Error
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't put profile")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't update profile",
+		}
+	}
+	return nil
 }
 
 func (r *Repository) GetPreferences(userID uint64) (models.Preferences, error) {
@@ -108,7 +131,11 @@ func (r *Repository) GetPreferences(userID uint64) (models.Preferences, error) {
 	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return models.Preferences{}, nil
 	} else if res.Error != nil {
-		return models.Preferences{}, res.Error
+		r.logger.Err(res.Error).Msg("can't get preferences")
+		return models.Preferences{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get preferences",
+		}
 	}
 	return mapPreferences(preferences), nil
 }
@@ -116,19 +143,34 @@ func (r *Repository) GetPreferences(userID uint64) (models.Preferences, error) {
 func (r *Repository) PutPreferences(preferences models.Preferences) error {
 	prefs := unmapPreferences(preferences)
 	res := r.db.Clauses(clause.OnConflict{UpdateAll: true}).Create(&prefs)
-	return res.Error
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't put preferences")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't update preferences",
+		}
+	}
+	return nil
 }
 
 func (r *Repository) GetAllValidUsers() ([]uint64, error) {
 	var profiles []Profile
 	res := r.db.Model(&Profile{}).Find(&profiles)
 	if res.Error != nil {
-		return nil, res.Error
+		r.logger.Err(res.Error).Msg("can't get all profiles")
+		return nil, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get all profiles",
+		}
 	}
 	var prefs []Preferences
 	res = r.db.Model(&Preferences{}).Find(&prefs)
 	if res.Error != nil {
-		return nil, res.Error
+		r.logger.Err(res.Error).Msg("can't get all preferences")
+		return nil, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get all preferences",
+		}
 	}
 	hasProfile := map[uint64]bool{}
 	for _, p := range profiles {

@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"errors"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 )
 
@@ -24,7 +24,10 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 		return "", false, errPermissionDenied
 	}
 	if msg.ContentType != models.ContentVoice {
-		return "", false, errors.New("bad content type")
+		return "", false, &errs.CodableError{
+			Code:    errs.CodeInvalidInput,
+			Message: "bad message content to transcribe",
+		}
 	}
 
 	text, found, err := s.repository.GetMessageTranscription(messageId)

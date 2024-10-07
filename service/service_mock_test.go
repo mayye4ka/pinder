@@ -321,21 +321,6 @@ func (mr *MockRepositoryMockRecorder) GetProfile(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockRepository)(nil).GetProfile), arg0)
 }
 
-// GetUser mocks base method.
-func (m *MockRepository) GetUser(id uint64) (models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUser", id)
-	ret0, _ := ret[0].(models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetUser indicates an expected call of GetUser.
-func (mr *MockRepositoryMockRecorder) GetUser(id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockRepository)(nil).GetUser), id)
-}
-
 // GetUserPhotos mocks base method.
 func (m *MockRepository) GetUserPhotos(userID uint64) ([]string, error) {
 	m.ctrl.T.Helper()

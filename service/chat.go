@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/mayye4ka/pinder/models"
 
 	"golang.org/x/net/context"
@@ -77,7 +75,7 @@ func (s *Service) ListMessages(ctx context.Context, chatId uint64) ([]models.Mes
 		return nil, err
 	}
 	if chat.User1 != userId && chat.User2 != userId {
-		return nil, errors.New("access denied")
+		return nil, errPermissionDenied
 	}
 	messages, err := s.repository.GetMessages(chatId)
 	if err != nil {
@@ -114,7 +112,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 		return err
 	}
 	if chat.User1 != userId && chat.User2 != userId {
-		return errors.New("access denied")
+		return errPermissionDenied
 	}
 	if contentType == models.ContentVoice {
 		key, err := s.filestorage.SaveChatVoice(ctx, []byte(payload))

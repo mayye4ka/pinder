@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"sort"
 	"time"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 )
 
@@ -25,7 +25,10 @@ func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, erro
 		return models.ProfileShowcase{}, err
 	}
 	if myProfile.UserID == 0 || myPrefs.UserID == 0 {
-		return models.ProfileShowcase{}, errors.New("incomplete profile")
+		return models.ProfileShowcase{}, &errs.CodableError{
+			Code:    errs.CodeInvalidInput,
+			Message: "incomplete profile",
+		}
 	}
 
 	partner, err := s.submitHangingPartner(ctx, userId)
@@ -49,7 +52,10 @@ func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, erro
 		return models.ProfileShowcase{}, err
 	}
 	if partner == nil {
-		return models.ProfileShowcase{}, errors.New("lower your expectations to zero")
+		return models.ProfileShowcase{}, &errs.CodableError{
+			Code:    errs.CodeNotFound,
+			Message: "lower your expectations to zero",
+		}
 	}
 	return *partner, nil
 }

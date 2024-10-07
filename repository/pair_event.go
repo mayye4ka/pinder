@@ -1,9 +1,12 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
+	"gorm.io/gorm"
 )
 
 type PairEvent struct {
@@ -38,14 +41,31 @@ func (r *Repository) CreateEvent(PAID uint64, eventType models.PEType) error {
 		EventType: unmapPeType(eventType),
 	}
 	res := r.db.Create(&pairEvent)
-	return res.Error
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't create event")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't create event",
+		}
+	}
+	return nil
 }
 
 func (r *Repository) GetLastEvent(PAID uint64) (models.PairEvent, error) {
 	var e PairEvent
 	res := r.db.Model(&PairEvent{}).Where("paid = ?", PAID).Order("created_at desc").First(&e)
 	if res.Error != nil {
-		return models.PairEvent{}, res.Error
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return models.PairEvent{}, &errs.CodableError{
+				Code:    errs.CodeNotFound,
+				Message: "no events for this pair attempt",
+			}
+		}
+		r.logger.Err(res.Error).Msg("can't get last event")
+		return models.PairEvent{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get last event",
+		}
 	}
 	return mapPairEvent(e), nil
 }

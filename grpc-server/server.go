@@ -4,6 +4,7 @@ import (
 	"context"
 
 	public_api "github.com/mayye4ka/pinder-api/public_api/go"
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +44,7 @@ type Authenticator interface {
 func (s *Server) Register(ctx context.Context, req *public_api.RegisterRequest) (*public_api.RegisterResponse, error) {
 	token, err := s.auth.Register(ctx, req.PhoneNumber, req.Password)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.RegisterResponse{
 		Token: token,
@@ -53,7 +54,7 @@ func (s *Server) Register(ctx context.Context, req *public_api.RegisterRequest) 
 func (s *Server) Login(ctx context.Context, req *public_api.LoginRequest) (*public_api.LoginResponse, error) {
 	token, err := s.auth.Login(ctx, req.PhoneNumber, req.Password)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.LoginResponse{
 		Token: token,
@@ -73,7 +74,7 @@ func (s *Server) GetUserId(ctx context.Context, req *emptypb.Empty) (*public_api
 func (s *Server) GetProfile(ctx context.Context, _ *emptypb.Empty) (*public_api.GetProfileResponse, error) {
 	profile, err := s.service.GetProfile(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.GetProfileResponse{
 		Profile: profileShowcaseToProto(profile),
@@ -83,7 +84,7 @@ func (s *Server) GetProfile(ctx context.Context, _ *emptypb.Empty) (*public_api.
 func (s *Server) GetPreferences(ctx context.Context, _ *emptypb.Empty) (*public_api.GetPreferencesResponse, error) {
 	preferences, err := s.service.GetPreferences(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.GetPreferencesResponse{
 		Preferences: preferencesToProto(preferences),
@@ -93,7 +94,7 @@ func (s *Server) GetPreferences(ctx context.Context, _ *emptypb.Empty) (*public_
 func (s *Server) UpdateProfile(ctx context.Context, req *public_api.UpdateProfileRequest) (*emptypb.Empty, error) {
 	err := s.service.UpdProfile(ctx, protoToProfile(req.NewProfile))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -101,7 +102,7 @@ func (s *Server) UpdateProfile(ctx context.Context, req *public_api.UpdateProfil
 func (s *Server) UpdatePreferences(ctx context.Context, req *public_api.UpdatePreferencesRequest) (*emptypb.Empty, error) {
 	err := s.service.UpdPreferences(ctx, protoToPreferences(req.NewPreferences))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -109,7 +110,7 @@ func (s *Server) UpdatePreferences(ctx context.Context, req *public_api.UpdatePr
 func (s *Server) AddPhoto(ctx context.Context, req *public_api.AddPhotoRequest) (*emptypb.Empty, error) {
 	err := s.service.AddPhoto(ctx, string(req.Photo))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -117,7 +118,7 @@ func (s *Server) AddPhoto(ctx context.Context, req *public_api.AddPhotoRequest) 
 func (s *Server) DeletePhoto(ctx context.Context, req *public_api.DeletePhotoRequest) (*emptypb.Empty, error) {
 	err := s.service.DeletePhoto(ctx, req.PhotoKey)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -125,7 +126,7 @@ func (s *Server) DeletePhoto(ctx context.Context, req *public_api.DeletePhotoReq
 func (s *Server) NextPartner(ctx context.Context, _ *emptypb.Empty) (*public_api.NextPartnerResponse, error) {
 	candidate, err := s.service.NextPartner(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.NextPartnerResponse{
 		Candidate: profileShowcaseToProto(candidate),
@@ -135,7 +136,7 @@ func (s *Server) NextPartner(ctx context.Context, _ *emptypb.Empty) (*public_api
 func (s *Server) Swipe(ctx context.Context, req *public_api.SwipeRequest) (*emptypb.Empty, error) {
 	err := s.service.Swipe(ctx, req.CandidateId, protoToSwipeVerdict(req.SwipeVerdict))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -143,7 +144,7 @@ func (s *Server) Swipe(ctx context.Context, req *public_api.SwipeRequest) (*empt
 func (s *Server) ListChats(ctx context.Context, _ *emptypb.Empty) (*public_api.ListChatsResponse, error) {
 	chats, err := s.service.ListChats(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.ListChatsResponse{
 		Chats: chatsToProto(chats),
@@ -153,7 +154,7 @@ func (s *Server) ListChats(ctx context.Context, _ *emptypb.Empty) (*public_api.L
 func (s *Server) ListMessages(ctx context.Context, req *public_api.ListMessagesRequest) (*public_api.ListMessagesResponse, error) {
 	messages, err := s.service.ListMessages(ctx, req.ChatId)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.ListMessagesResponse{
 		Messages: messagesToProto(messages),
@@ -163,7 +164,7 @@ func (s *Server) ListMessages(ctx context.Context, req *public_api.ListMessagesR
 func (s *Server) SendMessage(ctx context.Context, req *public_api.SendMessageRequest) (*emptypb.Empty, error) {
 	err := s.service.SendMessage(ctx, req.ChatId, protoToMsgContentType(req.ContentType), string(req.Payload))
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -171,7 +172,7 @@ func (s *Server) SendMessage(ctx context.Context, req *public_api.SendMessageReq
 func (s *Server) GetTextFromVoice(ctx context.Context, req *public_api.GetTextFromVoiceRequest) (*public_api.GetTextFromVoiceResponse, error) {
 	text, shouldWait, err := s.service.GetTextFromVoice(ctx, req.MessageId)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.GetTextFromVoiceResponse{
 		Text:       text,

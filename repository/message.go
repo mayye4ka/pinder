@@ -1,9 +1,12 @@
 package repository
 
 import (
+	"errors"
 	"time"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
+	"gorm.io/gorm"
 )
 
 type MsgContentType string
@@ -37,7 +40,11 @@ func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgCo
 	}
 	res := r.db.Create(&message)
 	if res.Error != nil {
-		return models.Message{}, res.Error
+		r.logger.Err(res.Error).Msg("can't send message")
+		return models.Message{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't send message",
+		}
 	}
 	return mapMessage(message), nil
 }
@@ -46,7 +53,11 @@ func (r *Repository) GetMessages(chatID uint64) ([]models.Message, error) {
 	var messages []Message
 	res := r.db.Model(&Message{}).Where("chat_id = ?", chatID).Order("created_at").Find(&messages)
 	if res.Error != nil {
-		return nil, res.Error
+		r.logger.Err(res.Error).Msg("can't get messages in this chat")
+		return nil, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get messages in this chat",
+		}
 	}
 	return mapMessages(messages), nil
 }
@@ -55,7 +66,17 @@ func (r *Repository) GetMessage(msgID uint64) (models.Message, error) {
 	var message Message
 	res := r.db.Model(&Message{}).Where("id = ?", msgID).First(&message)
 	if res.Error != nil {
-		return models.Message{}, res.Error
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return models.Message{}, &errs.CodableError{
+				Code:    errs.CodeNotFound,
+				Message: "not found this message",
+			}
+		}
+		r.logger.Err(res.Error).Msg("can't get message")
+		return models.Message{}, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get message",
+		}
 	}
 	return mapMessage(message), nil
 }
