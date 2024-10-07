@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/mayye4ka/pinder/models"
+	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
 )
@@ -17,14 +18,14 @@ func (s *Service) enrichMessageWithLinks(ctx context.Context, message *models.Me
 	if message.ContentType == models.ContentPhoto {
 		link, err := s.filestorage.MakeChatPhotoLink(ctx, message.Payload)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "can't make chat photo link")
 		}
 		message.Payload = link
 	}
 	if message.ContentType == models.ContentVoice {
 		link, err := s.filestorage.MakeChatVoiceLink(ctx, message.Payload)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "can't make chat voice link")
 		}
 		message.Payload = link
 	}
@@ -38,22 +39,22 @@ func (s *Service) ListChats(ctx context.Context) ([]models.ChatShowcase, error) 
 	}
 	chats, err := s.repository.GetChats(userId)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't get chats by user id")
 	}
 	res := []models.ChatShowcase{}
 	for _, chat := range chats {
 		user2 := getWhoIsNotMe(chat.User1, chat.User2, userId)
 		prof, err := s.repository.GetProfile(user2)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "can't get profile")
 		}
 		photos, err := s.repository.GetUserPhotos(user2)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "can't get user photos")
 		}
 		link, err := s.filestorage.MakeProfilePhotoLink(ctx, photos[0])
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "can't make profile photo link")
 		}
 		res = append(res, models.ChatShowcase{
 			ID:    chat.ID,
@@ -72,14 +73,14 @@ func (s *Service) ListMessages(ctx context.Context, chatId uint64) ([]models.Mes
 	}
 	chat, err := s.repository.GetChat(chatId)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't get chat by id")
 	}
 	if chat.User1 != userId && chat.User2 != userId {
 		return nil, errPermissionDenied
 	}
 	messages, err := s.repository.GetMessages(chatId)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "can't get messages")
 	}
 	res := []models.MessageShowcase{}
 	for _, msg := range messages {
@@ -89,7 +90,7 @@ func (s *Service) ListMessages(ctx context.Context, chatId uint64) ([]models.Mes
 		}
 		err = s.enrichMessageWithLinks(ctx, &msg)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "can't enrich message with links")
 		}
 		res = append(res, models.MessageShowcase{
 			ID:          msg.ID,
@@ -109,7 +110,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 	}
 	chat, err := s.repository.GetChat(chatId)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't get chat")
 	}
 	if chat.User1 != userId && chat.User2 != userId {
 		return errPermissionDenied
@@ -117,23 +118,23 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 	if contentType == models.ContentVoice {
 		key, err := s.filestorage.SaveChatVoice(ctx, []byte(payload))
 		if err != nil {
-			return nil
+			return errors.Wrap(err, "can't save chat voice")
 		}
 		payload = key
 	} else if contentType == models.ContentPhoto {
 		key, err := s.filestorage.SaveChatPhoto(ctx, []byte(payload))
 		if err != nil {
-			return nil
+			return errors.Wrap(err, "can't save chat photo")
 		}
 		payload = key
 	}
 	msg, err := s.repository.SendMessage(chatId, userId, contentType, payload)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't send message")
 	}
 	err = s.enrichMessageWithLinks(ctx, &msg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't enrich message with links")
 	}
 	for _, recv := range []uint64{chat.User1, chat.User2} {
 		sentByMe := true
@@ -148,7 +149,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 			Payload:     payload,
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "can't send message")
 		}
 	}
 	return nil

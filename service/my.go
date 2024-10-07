@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mayye4ka/pinder/models"
+	"github.com/pkg/errors"
 )
 
 func (s *Service) UpdProfile(ctx context.Context, newProfile models.Profile) error {
@@ -22,7 +23,11 @@ func (s *Service) UpdProfile(ctx context.Context, newProfile models.Profile) err
 	if newProfile.Age == 0 || newProfile.LocationLat == 0 || newProfile.LocationLon == 0 {
 		return fmt.Errorf("bad profile")
 	}
-	return s.repository.PutProfile(newProfile)
+	err := s.repository.PutProfile(newProfile)
+	if err != nil {
+		return errors.Wrap(err, "can't update profile")
+	}
+	return nil
 }
 
 func (s *Service) GetProfile(ctx context.Context) (models.ProfileShowcase, error) {
@@ -32,11 +37,11 @@ func (s *Service) GetProfile(ctx context.Context) (models.ProfileShowcase, error
 	}
 	profile, err := s.repository.GetProfile(userId)
 	if err != nil {
-		return models.ProfileShowcase{}, err
+		return models.ProfileShowcase{}, errors.Wrap(err, "can't get profile")
 	}
 	photos, err := s.getUserPhotos(ctx, userId)
 	if err != nil {
-		return models.ProfileShowcase{}, err
+		return models.ProfileShowcase{}, errors.Wrap(err, "can't get user photos")
 	}
 	return models.ProfileShowcase{
 		Profile: profile,
@@ -50,7 +55,11 @@ func (s *Service) UpdPreferences(ctx context.Context, newPreferences models.Pref
 		return errUnauthenticated
 	}
 	newPreferences.UserID = userId
-	return s.repository.PutPreferences(newPreferences)
+	err := s.repository.PutPreferences(newPreferences)
+	if err != nil {
+		return errors.Wrap(err, "can't update preferences")
+	}
+	return nil
 }
 
 func (s *Service) GetPreferences(ctx context.Context) (models.Preferences, error) {
@@ -60,7 +69,7 @@ func (s *Service) GetPreferences(ctx context.Context) (models.Preferences, error
 	}
 	preferences, err := s.repository.GetPreferences(userId)
 	if err != nil {
-		return models.Preferences{}, err
+		return models.Preferences{}, errors.Wrap(err, "can't get preferences")
 	}
 	return preferences, nil
 }

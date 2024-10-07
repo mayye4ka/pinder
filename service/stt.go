@@ -5,6 +5,7 @@ import (
 
 	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
+	"github.com/pkg/errors"
 )
 
 func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (string, bool, error) {
@@ -14,11 +15,11 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 	}
 	msg, err := s.repository.GetMessage(messageId)
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "can't get message")
 	}
 	chat, err := s.repository.GetChat(msg.ChatID)
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "can't get chat")
 	}
 	if chat.User1 != userId && chat.User2 != userId {
 		return "", false, errPermissionDenied
@@ -32,7 +33,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 
 	text, found, err := s.repository.GetMessageTranscription(messageId)
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "can't get message transcription")
 	}
 	if found {
 		return text, false, nil
@@ -40,7 +41,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 
 	speech, err := s.filestorage.GetChatVoice(ctx, msg.Payload)
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "can't get chat voice")
 	}
 
 	err = s.stt.PutTask(models.SttTask{
@@ -49,7 +50,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 		Speech:    speech,
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "can't put task")
 	}
 	return "", true, nil
 }
@@ -68,7 +69,7 @@ func (s *Service) Start() error {
 func (s *Service) handleSttResult(res models.SttResult) error {
 	err := s.repository.SaveMessageTranscription(res.MessageID, res.Text)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "can't save message transcription")
 	}
 	return s.userNotifier.SendTranscribedMessage(res.UserID, models.MessageTranscibed{
 		MessageID: res.MessageID,
