@@ -46,7 +46,12 @@ func (i *UserWsNotifier) addUser(id uint64, conn *websocket.Conn) {
 
 func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 	for {
-		// TODO:
+		mt, b, err := conn.ReadMessage()
+		if err != nil {
+			log.Println("ws read error", err)
+		} else {
+			log.Printf("got message type %d: %s\n", mt, string(b))
+		}
 	}
 }
 
