@@ -50,6 +50,10 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 		mt, b, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("ws read error", err)
+			i.connStoreMu.Lock()
+			conn.Close()
+			delete(i.connStore, id)
+			i.connStoreMu.Unlock()
 		} else {
 			log.Printf("got message type %d: %s\n", mt, string(b))
 		}
