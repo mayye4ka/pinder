@@ -133,7 +133,7 @@ func (n *UserWsNotifier) wsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	token := strings.TrimPrefix(r.Header.Get("Authentication"), authorizationTrimPrefix)
+	token := strings.TrimPrefix(r.Header.Get(tokenHeader), authorizationTrimPrefix)
 	userId, err := n.auth.UnpackToken(r.Context(), token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
