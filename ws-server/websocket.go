@@ -33,7 +33,8 @@ type Authenticator interface {
 
 func NewUserWsNotifier(auth Authenticator) *UserWsNotifier {
 	return &UserWsNotifier{
-		auth: auth,
+		auth:      auth,
+		connStore: map[uint64][]*websocket.Conn{},
 	}
 }
 
