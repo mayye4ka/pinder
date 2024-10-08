@@ -54,6 +54,7 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 			conn.Close()
 			delete(i.connStore, id)
 			i.connStoreMu.Unlock()
+			break
 		} else {
 			log.Printf("got message type %d: %s\n", mt, string(b))
 		}
