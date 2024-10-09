@@ -142,11 +142,11 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 			sentByMe = false
 		}
 		err = s.userNotifier.SendMessage(recv, models.MessageSend{
-			ChatID:      chatId,
+			ChatID:      msg.ChatID,
 			MessageID:   msg.ID,
 			SentByMe:    sentByMe,
-			ContentType: contentType,
-			Payload:     payload,
+			ContentType: msg.ContentType,
+			Payload:     msg.Payload,
 		})
 		if err != nil {
 			return errors.Wrap(err, "can't send message")

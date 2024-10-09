@@ -124,14 +124,14 @@ func (s *ServiceTestSuite) TestSendMessage_ContentTypeVoice() {
 		MessageID:   msgVoice.ID,
 		SentByMe:    true,
 		ContentType: models.ContentVoice,
-		Payload:     msgVoice.Payload,
+		Payload:     voiceLink,
 	}).Return(nil)
 	s.userNotifierMock.EXPECT().SendMessage(chat.User2, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgVoice.ID,
 		SentByMe:    false,
 		ContentType: models.ContentVoice,
-		Payload:     msgVoice.Payload,
+		Payload:     voiceLink,
 	}).Return(nil)
 
 	err := s.service.SendMessage(user1Ctx, chat.ID, models.ContentVoice, string(voiceBytes))
@@ -150,14 +150,14 @@ func (s *ServiceTestSuite) TestSendMessage_ContentTypePhoto() {
 		MessageID:   msgPhoto.ID,
 		SentByMe:    true,
 		ContentType: models.ContentPhoto,
-		Payload:     msgPhoto.Payload,
+		Payload:     chatPhotoLink,
 	}).Return(nil)
 	s.userNotifierMock.EXPECT().SendMessage(chat.User2, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgPhoto.ID,
 		SentByMe:    false,
 		ContentType: models.ContentPhoto,
-		Payload:     msgPhoto.Payload,
+		Payload:     chatPhotoLink,
 	}).Return(nil)
 
 	err := s.service.SendMessage(user1Ctx, chat.ID, models.ContentPhoto, string(photoBytes))
