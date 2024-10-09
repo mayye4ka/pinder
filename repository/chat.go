@@ -36,7 +36,7 @@ func (r *Repository) CreateChat(user1, user2 uint64) error {
 
 func (r *Repository) GetChats(userID uint64) ([]models.Chat, error) {
 	var chats []Chat
-	res := r.db.Model(&Chat{}).Where("user_1 = ? or user_2 = ?", userID, userID).Find(&chats)
+	res := r.db.Model(&Chat{}).Where("user1 = ? or user2 = ?", userID, userID).Find(&chats)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't get chats")
 		return nil, &errs.CodableError{

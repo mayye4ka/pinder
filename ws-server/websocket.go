@@ -47,7 +47,7 @@ func (i *UserWsNotifier) addUser(id uint64, conn *websocket.Conn) {
 
 func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 	for {
-		mt, b, err := conn.ReadMessage()
+		_, _, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("ws read error", err)
 			conn.Close()
@@ -55,17 +55,13 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 			delete(i.connStore, id)
 			i.connStoreMu.Unlock()
 			break
-		} else {
-			log.Printf("got message type %d: %s\n", mt, string(b))
 		}
 	}
 }
 
 func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 	i.connStoreMu.RLock()
-	fmt.Println("have connections for user", id, i.connStore[id])
 	for _, conn := range i.connStore[id] {
-		log.Printf("sending notification to %d: %d\n", id, len(bytes))
 		err := conn.WriteMessage(websocket.BinaryMessage, bytes)
 		if err != nil {
 			log.Println(err)
@@ -75,7 +71,6 @@ func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 }
 
 func (i *UserWsNotifier) notify(userId uint64, notification *public_api.DataPackage) error {
-	log.Printf("trying to send notification to %d: %v\n", userId, notification)
 	bytes, err := proto.Marshal(notification)
 	if err != nil {
 		return nil
@@ -143,14 +138,12 @@ func (n *UserWsNotifier) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := strings.TrimPrefix(r.Header.Get(tokenHeader), authorizationTrimPrefix)
-	log.Println("got token", token)
 	userId, err := n.auth.UnpackToken(r.Context(), token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
-	fmt.Println("got user id", userId)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
