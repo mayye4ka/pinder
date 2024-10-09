@@ -50,8 +50,8 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 		mt, b, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("ws read error", err)
-			i.connStoreMu.Lock()
 			conn.Close()
+			i.connStoreMu.Lock()
 			delete(i.connStore, id)
 			i.connStoreMu.Unlock()
 			break
@@ -63,6 +63,7 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 
 func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 	i.connStoreMu.RLock()
+	fmt.Println("have connections", i.connStore[id])
 	for _, conn := range i.connStore[id] {
 		log.Printf("sending notification to %d: %d\n", id, len(bytes))
 		err := conn.WriteMessage(websocket.BinaryMessage, bytes)
