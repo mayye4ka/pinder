@@ -63,7 +63,7 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 
 func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 	i.connStoreMu.RLock()
-	fmt.Println("have connections", i.connStore[id])
+	fmt.Println("have connections for user", id, i.connStore[id])
 	for _, conn := range i.connStore[id] {
 		log.Printf("sending notification to %d: %d\n", id, len(bytes))
 		err := conn.WriteMessage(websocket.BinaryMessage, bytes)
@@ -143,12 +143,14 @@ func (n *UserWsNotifier) wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := strings.TrimPrefix(r.Header.Get(tokenHeader), authorizationTrimPrefix)
+	log.Println("got token", token)
 	userId, err := n.auth.UnpackToken(r.Context(), token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
+	fmt.Println("got user id", userId)
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
