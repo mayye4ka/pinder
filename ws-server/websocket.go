@@ -64,6 +64,7 @@ func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
 func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 	i.connStoreMu.RLock()
 	for _, conn := range i.connStore[id] {
+		log.Printf("sending notification to %d: %d\n", id, len(bytes))
 		err := conn.WriteMessage(websocket.BinaryMessage, bytes)
 		if err != nil {
 			log.Println(err)
@@ -73,6 +74,7 @@ func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
 }
 
 func (i *UserWsNotifier) notify(userId uint64, notification *public_api.DataPackage) error {
+	log.Printf("trying to send notification to %d: %v\n", userId, notification)
 	bytes, err := proto.Marshal(notification)
 	if err != nil {
 		return nil
