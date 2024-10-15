@@ -19,7 +19,7 @@ func (Photo) TableName() string {
 
 func (r *Repository) getMaxPhotoOrder(userID uint64) (int, error) {
 	var max int
-	res := r.db.Model(&Photo{}).Select("max(order_n)").Where("user_id = ?", userID).First(max)
+	res := r.db.Model(&Photo{}).Select("max(order_n)").Where("user_id = ?", userID).First(&max)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return 0, nil
