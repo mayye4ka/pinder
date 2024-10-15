@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	public_api "github.com/mayye4ka/pinder-api/public_api/go"
 
@@ -48,9 +49,14 @@ func (c *ServerCtrl) Start(port int) error {
 }
 
 func (c *ServerCtrl) authInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	t1 := time.Now()
 	userId := c.getUserIdFromIncomingContext(ctx)
 	ctx = context.WithValue(ctx, userIdContextKey, userId)
-	return handler(ctx, req)
+	t2 := time.Now()
+	resp, err := handler(ctx, req)
+	t3 := time.Now()
+	log.Printf("auth actions took %v, handler took %v", t2.Sub(t1), t3.Sub(t2))
+	return resp, err
 }
 
 func (c *ServerCtrl) getUserIdFromIncomingContext(ctx context.Context) uint64 {
