@@ -19,7 +19,7 @@ func (Photo) TableName() string {
 
 func (r *Repository) getMaxPhotoOrder(userID uint64) (int, error) {
 	var max int
-	res := r.db.Select("max(order)").Where("user_id = ?", userID).First(max)
+	res := r.db.Model(&Photo{}).Select("max(order)").Where("user_id = ?", userID).First(max)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't get max photo order")
 		return 0, &errs.CodableError{
@@ -89,7 +89,7 @@ func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
 }
 
 func (r *Repository) updatePhotoOrder(photo string, newOrder int) error {
-	res := r.db.Where("photo_key = ?", photo).Update("order_n", newOrder)
+	res := r.db.Model(&Photo{}).Where("photo_key = ?", photo).Update("order_n", newOrder)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't update photo order")
 		return &errs.CodableError{
