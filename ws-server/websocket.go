@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/uuid"
 	public_api "github.com/mayye4ka/pinder-api/public_api/go"
 	"github.com/mayye4ka/pinder/models"
 
@@ -23,7 +24,7 @@ const (
 type UserWsNotifier struct {
 	auth Authenticator
 
-	connStore   map[uint64][]*websocket.Conn
+	connStore   map[uint64]map[string]*websocket.Conn
 	connStoreMu sync.RWMutex
 }
 
@@ -34,25 +35,32 @@ type Authenticator interface {
 func NewUserWsNotifier(auth Authenticator) *UserWsNotifier {
 	return &UserWsNotifier{
 		auth:      auth,
-		connStore: map[uint64][]*websocket.Conn{},
+		connStore: map[uint64]map[string]*websocket.Conn{},
 	}
 }
 
 func (i *UserWsNotifier) addUser(id uint64, conn *websocket.Conn) {
 	i.connStoreMu.Lock()
-	i.connStore[id] = append(i.connStore[id], conn)
+	if i.connStore[id] == nil {
+		i.connStore[id] = map[string]*websocket.Conn{}
+	}
+	connId := uuid.New().String()
+	i.connStore[id][connId] = conn
 	i.connStoreMu.Unlock()
-	go i.serveConn(id, conn)
+	go i.serveConn(id, connId, conn)
 }
 
-func (i *UserWsNotifier) serveConn(id uint64, conn *websocket.Conn) {
+func (i *UserWsNotifier) serveConn(id uint64, connId string, conn *websocket.Conn) {
 	for {
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("ws read error", err)
 			conn.Close()
 			i.connStoreMu.Lock()
-			delete(i.connStore, id)
+			delete(i.connStore[id], connId)
+			if len(i.connStore[id]) == 0 {
+				delete(i.connStore, id)
+			}
 			i.connStoreMu.Unlock()
 			break
 		}
