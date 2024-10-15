@@ -25,6 +25,7 @@ type Service interface {
 
 	AddPhoto(ctx context.Context, photo string) error
 	DeletePhoto(ctx context.Context, photoKey string) error
+	ReorderPhotos(ctx context.Context, newOrder []string) error
 
 	NextPartner(ctx context.Context) (models.ProfileShowcase, error)
 	Swipe(ctx context.Context, candidateId uint64, swipeVerdict models.SwipeVerdict) error
@@ -77,7 +78,8 @@ func (s *Server) GetProfile(ctx context.Context, _ *emptypb.Empty) (*public_api.
 		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.GetProfileResponse{
-		Profile: profileShowcaseToProto(profile),
+		Profile: profileToProto(profile.Profile),
+		Photos:  photosToProto(profile.Photos),
 	}, nil
 }
 
@@ -115,6 +117,14 @@ func (s *Server) AddPhoto(ctx context.Context, req *public_api.AddPhotoRequest) 
 	return &emptypb.Empty{}, nil
 }
 
+func (s *Server) ReorderPhotos(ctx context.Context, req *public_api.ReorderPhotosRequest) (*emptypb.Empty, error) {
+	err := s.service.ReorderPhotos(ctx, req.NewOrder)
+	if err != nil {
+		return nil, errs.ToGrpcError(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *Server) DeletePhoto(ctx context.Context, req *public_api.DeletePhotoRequest) (*emptypb.Empty, error) {
 	err := s.service.DeletePhoto(ctx, req.PhotoKey)
 	if err != nil {
@@ -129,7 +139,7 @@ func (s *Server) NextPartner(ctx context.Context, _ *emptypb.Empty) (*public_api
 		return nil, errs.ToGrpcError(err)
 	}
 	return &public_api.NextPartnerResponse{
-		Candidate: profileShowcaseToProto(candidate),
+		Candidate: profileShowcaseToCandidate(candidate),
 	}, nil
 }
 

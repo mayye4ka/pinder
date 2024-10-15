@@ -10,16 +10,38 @@ import (
 type Photo struct {
 	UserID   uint64
 	PhotoKey string
+	Order    int
 }
 
 func (Photo) TableName() string {
 	return "photos"
 }
 
+func (r *Repository) getMaxPhotoOrder(userID uint64) (int, error) {
+	var max int
+	res := r.db.Select("max(order)").Where("user_id = ?", userID).First(max)
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't get max photo order")
+		return 0, &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get max photo order",
+		}
+	}
+	return max, nil
+}
+
 func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
+	maxOrder, err := r.getMaxPhotoOrder(userID)
+	if err != nil {
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get photo order",
+		}
+	}
 	res := r.db.Create(&Photo{
 		UserID:   userID,
 		PhotoKey: photoKey,
+		Order:    maxOrder + 1,
 	})
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't create photo")
@@ -33,7 +55,7 @@ func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
 
 func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
 	var photos []Photo
-	res := r.db.Model(&Photo{}).Where("user_id = ?", userID).Find(&photos)
+	res := r.db.Model(&Photo{}).Where("user_id = ?", userID).Order("order").Find(&photos)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't get user photos")
 		return nil, &errs.CodableError{
@@ -61,6 +83,28 @@ func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
 		return &errs.CodableError{
 			Code:    errs.CodeInternal,
 			Message: "can't delete user photo",
+		}
+	}
+	return nil
+}
+
+func (r *Repository) updatePhotoOrder(photo string, newOrder int) error {
+	res := r.db.Where("photo_key = ?", photo).Update("order", newOrder)
+	if res.Error != nil {
+		r.logger.Err(res.Error).Msg("can't update photo order")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't update photo order",
+		}
+	}
+	return nil
+}
+
+func (r *Repository) ReorderPhotos(photos []string) error {
+	for i, photo := range photos {
+		err := r.updatePhotoOrder(photo, i+1)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

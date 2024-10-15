@@ -6,16 +6,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func profileShowcaseToProto(prof models.ProfileShowcase) *public_api.Profile {
-	return &public_api.Profile{
+func profileShowcaseToCandidate(prof models.ProfileShowcase) *public_api.Candidate {
+	return &public_api.Candidate{
 		Profile: profileToProto(prof.Profile),
-		Photos:  photosToProto(prof.Photos),
+		Photos:  photosToLinkList(prof.Photos),
 	}
 }
 
-func profileToProto(prof models.Profile) *public_api.ProfileParams {
-	return &public_api.ProfileParams{
-		UserId:       prof.UserID,
+func profileToProto(prof models.Profile) *public_api.Profile {
+	return &public_api.Profile{
 		Name:         prof.Name,
 		Gender:       genderToProto(prof.Gender),
 		Age:          int32(prof.Age),
@@ -24,6 +23,14 @@ func profileToProto(prof models.Profile) *public_api.ProfileParams {
 		LocationLon:  prof.LocationLon,
 		LocationName: prof.LocationName,
 	}
+}
+
+func photosToLinkList(photos []models.PhotoShowcase) []string {
+	res := make([]string, len(photos))
+	for i, photo := range photos {
+		res[i] = photo.Link
+	}
+	return res
 }
 
 func photosToProto(photos []models.PhotoShowcase) []*public_api.Photo {
@@ -84,12 +91,11 @@ func protoToPreferences(pref *public_api.Preferences) models.Preferences {
 	}
 }
 
-func protoToProfile(prof *public_api.ProfileParams) models.Profile {
+func protoToProfile(prof *public_api.Profile) models.Profile {
 	if prof == nil {
 		return models.Profile{}
 	}
 	return models.Profile{
-		UserID:       prof.UserId,
 		Name:         prof.Name,
 		Gender:       protoToGender(prof.Gender),
 		Age:          int(prof.Age),

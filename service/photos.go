@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"reflect"
 
+	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 	"github.com/pkg/errors"
 )
@@ -48,4 +50,35 @@ func (s *Service) DeletePhoto(ctx context.Context, photoKey string) error {
 		return errors.Wrap(err, "can't delete profile photo")
 	}
 	return s.repository.DeleteUserPhoto(userId, photoKey)
+}
+
+func (s *Service) ReorderPhotos(ctx context.Context, newOrder []string) error {
+	userId := ctx.Value(userIdContextKey).(uint64)
+	if userId == 0 {
+		return errUnauthenticated
+	}
+	photos, err := s.repository.GetUserPhotos(userId)
+	if err != nil {
+		return errors.Wrap(err, "can't reorder photos")
+	}
+
+	exPhotoMap := map[string]bool{}
+	newPhotoMap := map[string]bool{}
+	for _, p := range photos {
+		newPhotoMap[p] = true
+	}
+	for _, p := range newOrder {
+		exPhotoMap[p] = true
+	}
+	if !reflect.DeepEqual(newPhotoMap, exPhotoMap) {
+		return &errs.CodableError{
+			Code:    errs.CodeInvalidInput,
+			Message: "should specify all photos to reorder",
+		}
+	}
+	err = s.repository.ReorderPhotos(newOrder)
+	if err != nil {
+		return errors.Wrap(err, "can't reorder photos")
+	}
+	return nil
 }

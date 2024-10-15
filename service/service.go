@@ -33,6 +33,7 @@ type Repository interface {
 	AddPhoto(userID uint64, photoKey string) error
 	GetUserPhotos(userID uint64) ([]string, error)
 	DeleteUserPhoto(userID uint64, photoKey string) error
+	ReorderPhotos(newOrder []string) error
 	GetPreferences(uint64) (models.Preferences, error)
 	PutPreferences(models.Preferences) error
 	GetAllValidUsers() ([]uint64, error)

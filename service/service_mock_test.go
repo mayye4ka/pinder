@@ -379,6 +379,20 @@ func (mr *MockRepositoryMockRecorder) PutProfile(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutProfile", reflect.TypeOf((*MockRepository)(nil).PutProfile), arg0)
 }
 
+// ReorderPhotos mocks base method.
+func (m *MockRepository) ReorderPhotos(newOrder []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReorderPhotos", newOrder)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReorderPhotos indicates an expected call of ReorderPhotos.
+func (mr *MockRepositoryMockRecorder) ReorderPhotos(newOrder any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReorderPhotos", reflect.TypeOf((*MockRepository)(nil).ReorderPhotos), newOrder)
+}
+
 // SaveMessageTranscription mocks base method.
 func (m *MockRepository) SaveMessageTranscription(id uint64, text string) error {
 	m.ctrl.T.Helper()
