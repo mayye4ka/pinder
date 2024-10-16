@@ -8,8 +8,9 @@ import (
 
 func profileShowcaseToCandidate(prof models.ProfileShowcase) *public_api.Candidate {
 	return &public_api.Candidate{
-		Profile: profileToProto(prof.Profile),
-		Photos:  photosToLinkList(prof.Photos),
+		CandidateId: prof.Profile.UserID,
+		Profile:     profileToProto(prof.Profile),
+		Photos:      photosToLinkList(prof.Photos),
 	}
 }
 
