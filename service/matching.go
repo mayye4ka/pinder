@@ -173,6 +173,9 @@ func (s *Service) chooseCandidate(userId uint64) (uint64, error) {
 	}
 	candidates := []uint64{}
 	for _, id := range ids {
+		if id == userId {
+			continue
+		}
 		pref, err := s.repository.GetPreferences(id)
 		if err != nil {
 			return 0, errors.Wrap(err, "can't get preferences")
