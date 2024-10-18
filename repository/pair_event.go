@@ -11,7 +11,7 @@ import (
 
 type PairEvent struct {
 	ID        uint64
-	PAID      uint64
+	PAID      uint64 `gorm:"column:pa_id"`
 	CreatedAt time.Time
 	EventType PEType
 }
