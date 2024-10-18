@@ -53,7 +53,7 @@ func (r *Repository) CreateEvent(PAID uint64, eventType models.PEType) error {
 
 func (r *Repository) GetLastEvent(PAID uint64) (models.PairEvent, error) {
 	var e PairEvent
-	res := r.db.Model(&PairEvent{}).Where("paid = ?", PAID).Order("created_at desc").First(&e)
+	res := r.db.Model(&PairEvent{}).Where("pa_id = ?", PAID).Order("created_at desc").First(&e)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return models.PairEvent{}, &errs.CodableError{
