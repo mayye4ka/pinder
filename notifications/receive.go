@@ -61,12 +61,12 @@ func (n *Notifier) Start() error {
 		return err
 	}
 	for msg := range msgs {
-		var notification *notification_api.UserNotification
-		err = proto.Unmarshal(msg.Body, notification)
+		var notification notification_api.UserNotification
+		err = proto.Unmarshal(msg.Body, &notification)
 		if err != nil {
 			return err
 		}
-		n.resultChan <- notification
+		n.resultChan <- &notification
 	}
 	return nil
 }
