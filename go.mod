@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jftuga/geodist v1.0.0
 	github.com/joho/godotenv v1.5.1
-	github.com/mayye4ka/pinder-api v1.3.0
+	github.com/mayye4ka/pinder-api v1.5.0
 	github.com/minio/minio-go/v7 v7.0.76
 	github.com/pkg/errors v0.9.1
 	github.com/rabbitmq/amqp091-go v1.10.0

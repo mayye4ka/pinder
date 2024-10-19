@@ -10,6 +10,7 @@ import (
 	"github.com/mayye4ka/pinder/authenticator"
 	"github.com/mayye4ka/pinder/file_storage"
 	grpc_server "github.com/mayye4ka/pinder/grpc-server"
+	"github.com/mayye4ka/pinder/notifications"
 	"github.com/mayye4ka/pinder/repository"
 	"github.com/mayye4ka/pinder/service"
 	"github.com/mayye4ka/pinder/stt"
@@ -112,9 +113,10 @@ func main() {
 	fileStorage := file_storage.New(minio)
 	repository := repository.New(db, &logger)
 	stt := stt.New(rabbit)
+	notifier := notifications.NewNotifier(rabbit)
 
 	auth := authenticator.New(repository, &logger)
-	notifier := ws_server.NewUserWsNotifier(auth)
+	wsServer := ws_server.NewWsServer(auth, notifier)
 	svc := service.New(repository, fileStorage, notifier, stt)
 
 	server := grpc_server.New(svc, auth)
@@ -125,7 +127,12 @@ func main() {
 		}
 	}()
 	go func() {
-		if err := notifier.Start(config.WsPort); err != nil {
+		if err := notifier.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	go func() {
+		if err := wsServer.Start(config.WsPort); err != nil {
 			log.Fatal(err)
 		}
 	}()

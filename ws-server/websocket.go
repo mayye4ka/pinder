@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	public_api "github.com/mayye4ka/pinder-api/public_api/go"
-	"github.com/mayye4ka/pinder/models"
+	public_api "github.com/mayye4ka/pinder-api/api/go"
+	notification_api "github.com/mayye4ka/pinder-api/notifications/go"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
@@ -21,8 +21,9 @@ const (
 	authorizationTrimPrefix = "Bearer "
 )
 
-type UserWsNotifier struct {
-	auth Authenticator
+type WsServer struct {
+	auth                 Authenticator
+	notificationProducer NotificationProducer
 
 	connStore   map[uint64]map[string]*websocket.Conn
 	connStoreMu sync.RWMutex
@@ -32,121 +33,76 @@ type Authenticator interface {
 	UnpackToken(ctx context.Context, token string) (uint64, error)
 }
 
-func NewUserWsNotifier(auth Authenticator) *UserWsNotifier {
-	return &UserWsNotifier{
-		auth:      auth,
+type NotificationProducer interface {
+	Notifications() <-chan *notification_api.UserNotification
+}
+
+func NewWsServer(auth Authenticator, ntfcProducer NotificationProducer) *WsServer {
+	return &WsServer{
+		auth:                 auth,
+		notificationProducer: ntfcProducer,
+
 		connStore: map[uint64]map[string]*websocket.Conn{},
 	}
 }
 
-func (i *UserWsNotifier) addUser(id uint64, conn *websocket.Conn) {
-	i.connStoreMu.Lock()
-	if i.connStore[id] == nil {
-		i.connStore[id] = map[string]*websocket.Conn{}
+func (s *WsServer) addUser(id uint64, conn *websocket.Conn) {
+	s.connStoreMu.Lock()
+	if s.connStore[id] == nil {
+		s.connStore[id] = map[string]*websocket.Conn{}
 	}
 	connId := uuid.New().String()
-	i.connStore[id][connId] = conn
-	i.connStoreMu.Unlock()
-	go i.serveConn(id, connId, conn)
+	s.connStore[id][connId] = conn
+	s.connStoreMu.Unlock()
+	go s.serveConn(id, connId, conn)
 }
 
-func (i *UserWsNotifier) serveConn(id uint64, connId string, conn *websocket.Conn) {
+func (s *WsServer) serveConn(id uint64, connId string, conn *websocket.Conn) {
 	for {
 		_, _, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("ws read error", err)
 			conn.Close()
-			i.connStoreMu.Lock()
-			delete(i.connStore[id], connId)
-			if len(i.connStore[id]) == 0 {
-				delete(i.connStore, id)
+			s.connStoreMu.Lock()
+			delete(s.connStore[id], connId)
+			if len(s.connStore[id]) == 0 {
+				delete(s.connStore, id)
 			}
-			i.connStoreMu.Unlock()
+			s.connStoreMu.Unlock()
 			break
 		}
 	}
 }
 
-func (i *UserWsNotifier) sendBytes(id uint64, bytes []byte) {
-	i.connStoreMu.RLock()
-	for _, conn := range i.connStore[id] {
+func (s *WsServer) sendBytes(id uint64, bytes []byte) {
+	s.connStoreMu.RLock()
+	for _, conn := range s.connStore[id] {
 		err := conn.WriteMessage(websocket.BinaryMessage, bytes)
 		if err != nil {
 			log.Println(err)
 		}
 	}
-	i.connStoreMu.RUnlock()
+	s.connStoreMu.RUnlock()
 }
 
-func (i *UserWsNotifier) notify(userId uint64, notification *public_api.DataPackage) error {
+func (s *WsServer) notify(userId uint64, notification *public_api.DataPackage) error {
 	bytes, err := proto.Marshal(notification)
 	if err != nil {
 		return nil
 	}
-	i.sendBytes(userId, bytes)
+	s.sendBytes(userId, bytes)
 	return nil
-}
-
-func (i *UserWsNotifier) NotifyLiked(userId uint64, notification models.LikeNotification) error {
-	ntfc := &public_api.DataPackage{
-		Data: &public_api.DataPackage_IncomingLikeNotification{
-			IncomingLikeNotification: &public_api.IncomingLikeNotification{
-				OpponentName:  notification.Name,
-				OpponentPhoto: notification.Photo,
-			},
-		},
-	}
-	return i.notify(userId, ntfc)
-}
-
-func (i *UserWsNotifier) NotifyMatch(userId uint64, notification models.MatchNotification) error {
-	ntfc := &public_api.DataPackage{
-		Data: &public_api.DataPackage_MatchNotification{
-			MatchNotification: &public_api.MatchNotification{
-				OpponentName:  notification.Name,
-				OpponentPhoto: notification.Photo,
-			},
-		},
-	}
-	return i.notify(userId, ntfc)
-}
-
-func (i *UserWsNotifier) SendMessage(userId uint64, notification models.MessageSend) error {
-	ntfc := &public_api.DataPackage{
-		Data: &public_api.DataPackage_IncomingMessageNotification{
-			IncomingMessageNotification: &public_api.IncomingMessageNotification{
-				ChatId:      notification.ChatID,
-				MessageId:   notification.MessageID,
-				SentByMe:    notification.SentByMe,
-				ContentType: msgContentTypeToProto(notification.ContentType),
-				Payload:     notification.Payload,
-			},
-		},
-	}
-	return i.notify(userId, ntfc)
-}
-
-func (i *UserWsNotifier) SendTranscribedMessage(userId uint64, notification models.MessageTranscibed) error {
-	ntfc := &public_api.DataPackage{
-		Data: &public_api.DataPackage_VoiceTranscribedNotification{
-			VoiceTranscribedNotification: &public_api.VoiceTranscribedNotification{
-				MessageId: notification.MessageID,
-				Text:      notification.Text,
-			},
-		},
-	}
-	return i.notify(userId, ntfc)
 }
 
 var upgrader = websocket.Upgrader{}
 
-func (n *UserWsNotifier) wsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get(tokenHeader) == "" {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	token := strings.TrimPrefix(r.Header.Get(tokenHeader), authorizationTrimPrefix)
-	userId, err := n.auth.UnpackToken(r.Context(), token)
+	userId, err := s.auth.UnpackToken(r.Context(), token)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
@@ -158,21 +114,33 @@ func (n *UserWsNotifier) wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	n.addUser(userId, conn)
+	s.addUser(userId, conn)
 }
 
-func (n *UserWsNotifier) Start(port int) error {
-	http.HandleFunc("/ws", n.wsHandler)
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+func (s *WsServer) Start(port int) error {
+	http.HandleFunc("/ws", s.wsHandler)
+	go func() {
+		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	go func() {
+		err := s.startNotificationSending()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	select {}
 }
 
-func msgContentTypeToProto(ct models.MsgContentType) public_api.MESSAGE_CONTENT_TYPE {
-	switch ct {
-	case models.ContentPhoto:
-		return public_api.MESSAGE_CONTENT_TYPE_PHOTO
-	case models.ContentVoice:
-		return public_api.MESSAGE_CONTENT_TYPE_VOICE
-	default:
-		return public_api.MESSAGE_CONTENT_TYPE_TEXT
+func (s *WsServer) startNotificationSending() error {
+	c := s.notificationProducer.Notifications()
+	for n := range c {
+		err := s.notify(n.UserId, n.DataPackage)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

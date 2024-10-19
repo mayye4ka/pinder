@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	public_api "github.com/mayye4ka/pinder-api/public_api/go"
+	public_api "github.com/mayye4ka/pinder-api/api/go"
 	"github.com/mayye4ka/pinder/errs"
 	"github.com/mayye4ka/pinder/models"
 	"google.golang.org/grpc/codes"

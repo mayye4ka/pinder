@@ -7,8 +7,7 @@ import (
 	"net"
 	"strings"
 
-	public_api "github.com/mayye4ka/pinder-api/public_api/go"
-
+	public_api "github.com/mayye4ka/pinder-api/api/go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
