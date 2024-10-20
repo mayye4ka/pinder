@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/mayye4ka/pinder/authenticator"
 	"github.com/mayye4ka/pinder/file_storage"
@@ -79,6 +83,9 @@ func getRabbitMq(config Config) (*amqp.Connection, error) {
 }
 
 func main() {
+	termChan := make(chan os.Signal, 1)
+	signal.Notify(termChan, syscall.SIGTERM)
+	ctx, cancel := context.WithCancel(context.Background())
 	skipEnvLoad := false
 	_, err := os.Open(".env")
 	if err != nil && errors.Is(err, os.ErrNotExist) {
@@ -112,40 +119,38 @@ func main() {
 
 	fileStorage := file_storage.New(minio)
 	repository := repository.New(db, &logger)
-	stt := stt.New(rabbit)
+	sttTaskCreator := stt.NewTaskCreator(rabbit)
 	notifier := notifications.NewNotifier(rabbit)
 
 	auth := authenticator.New(repository, &logger)
 	wsServer := ws_server.NewWsServer(auth, notifier)
-	svc := service.New(repository, fileStorage, notifier, stt)
+	svc := service.New(repository, fileStorage, notifier, sttTaskCreator)
+	sttResultReceiver := stt.NewResultReceiver(rabbit, svc)
 
 	server := grpc_server.New(svc, auth)
 
 	go func() {
-		if err := stt.Start(); err != nil {
+		if err := wsServer.Start(ctx, config.WsPort); err != nil {
 			log.Fatal(err)
 		}
 	}()
 	go func() {
-		if err := notifier.Start(); err != nil {
+		if err := notifier.Start(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
 	go func() {
-		if err := wsServer.Start(config.WsPort); err != nil {
+		if err := sttResultReceiver.Start(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}()
 	go func() {
-		if err := svc.Start(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	go func() {
-		if err := server.Start(config.GrpcPort); err != nil {
+		if err := server.Start(ctx, config.GrpcPort); err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-	select {}
+	<-termChan
+	cancel()
+	time.Sleep(time.Minute)
 }

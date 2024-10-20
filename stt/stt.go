@@ -1,50 +1,45 @@
 package stt
 
 import (
+	"context"
+
 	"github.com/mayye4ka/pinder/models"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type Stt struct {
+type SttTaskCreator struct {
 	rabbit *amqp.Connection
-
-	resultChan chan models.SttResult
 }
 
-func New(rabbit *amqp.Connection) *Stt {
-	return &Stt{
-		rabbit:     rabbit,
-		resultChan: make(chan models.SttResult, 1024),
+func NewTaskCreator(rabbit *amqp.Connection) *SttTaskCreator {
+	return &SttTaskCreator{
+		rabbit: rabbit,
 	}
 }
 
-func (s *Stt) PutTask(task models.SttTask) error {
-	s.resultChan <- models.SttResult{
-		UserID:    task.UserID,
-		MessageID: task.MessageID,
-		Text:      "не могу понять. вынь хуй изо рта",
+func (s *SttTaskCreator) PutTask(task models.SttTask) error {
+	// TODO: put to rabbit
+	return nil
+}
+
+type SttResultHandler interface {
+	HandleSttResult(res models.SttResult) error
+}
+
+type SttResultReceiver struct {
+	rabbit  *amqp.Connection
+	handler SttResultHandler
+}
+
+func NewResultReceiver(rabbit *amqp.Connection, handler SttResultHandler) *SttResultReceiver {
+	return &SttResultReceiver{
+		rabbit:  rabbit,
+		handler: handler,
 	}
-	// TODO:
-	return nil
 }
 
-func (s *Stt) Start() error {
-	// TODO: connect, recv and put to resultsChan
-	/*
-		t := time.NewTicker(time.Second)
-		for range t.C {
-			// TODO: somehow load data from rabbit
-			var result SttResult
-
-			s.resultChan <- models.SttResult{
-				UserID:    result.UserID,
-				MessageID: result.MessageID,
-				Text:      result.Text,
-			}
-		}*/
+func (s *SttResultReceiver) Start(ctx context.Context) error {
+	<-ctx.Done()
+	// TODO: receive from rabbit and call handler
 	return nil
-}
-
-func (s *Stt) ResultsChan() <-chan models.SttResult {
-	return s.resultChan
 }

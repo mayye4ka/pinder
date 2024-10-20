@@ -117,16 +117,23 @@ func (s *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	s.addUser(userId, conn)
 }
 
-func (s *WsServer) Start(port int) error {
+func (s *WsServer) Start(ctx context.Context, port int) error {
 	http.HandleFunc("/ws", s.wsHandler)
 	go func() {
-		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+		httpServer := &http.Server{
+			Addr: fmt.Sprintf(":%d", port),
+		}
+		go func() {
+			<-ctx.Done()
+			httpServer.Shutdown(context.Background())
+		}()
+		err := httpServer.ListenAndServe()
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 	go func() {
-		err := s.startNotificationSending()
+		err := s.startNotificationSending(ctx)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -134,13 +141,17 @@ func (s *WsServer) Start(port int) error {
 	select {}
 }
 
-func (s *WsServer) startNotificationSending() error {
+func (s *WsServer) startNotificationSending(ctx context.Context) error {
 	c := s.notificationProducer.Notifications()
-	for n := range c {
-		err := s.notify(n.UserId, n.DataPackage)
-		if err != nil {
-			return err
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case n := <-c:
+			err := s.notify(n.UserId, n.DataPackage)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return nil
 }

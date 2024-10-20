@@ -81,7 +81,6 @@ type UserNotifier interface {
 
 type Stt interface {
 	PutTask(task models.SttTask) error
-	ResultsChan() <-chan models.SttResult
 }
 
 func New(repo Repository, filestorage FileStorage, userNotifier UserNotifier, stt Stt) *Service {

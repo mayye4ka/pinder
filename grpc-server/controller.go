@@ -32,7 +32,7 @@ func New(svc Service, auth Authenticator) *ServerCtrl {
 	}
 }
 
-func (c *ServerCtrl) Start(port int) error {
+func (c *ServerCtrl) Start(ctx context.Context, port int) error {
 	opts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(c.authInterceptor),
 		grpc.Creds(insecure.NewCredentials()),
@@ -43,6 +43,10 @@ func (c *ServerCtrl) Start(port int) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	go func() {
+		<-ctx.Done()
+		srv.GracefulStop()
+	}()
 	return srv.Serve(lis)
 }
 

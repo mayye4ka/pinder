@@ -55,18 +55,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 	return "", true, nil
 }
 
-func (s *Service) Start() error {
-	c := s.stt.ResultsChan()
-	for res := range c {
-		err := s.handleSttResult(res)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *Service) handleSttResult(res models.SttResult) error {
+func (s *Service) HandleSttResult(res models.SttResult) error {
 	err := s.repository.SaveMessageTranscription(res.MessageID, res.Text)
 	if err != nil {
 		return errors.Wrap(err, "can't save message transcription")

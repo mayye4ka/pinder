@@ -1,11 +1,13 @@
 package notifications
 
 import (
+	"context"
+
 	notification_api "github.com/mayye4ka/pinder-api/notifications/go"
 	"google.golang.org/protobuf/proto"
 )
 
-func (n *Notifier) Start() error {
+func (n *Notifier) Start(ctx context.Context) error {
 	ch, err := n.rabbit.Channel()
 	if err != nil {
 		return err
@@ -60,15 +62,19 @@ func (n *Notifier) Start() error {
 	if err != nil {
 		return err
 	}
-	for msg := range msgs {
-		var notification notification_api.UserNotification
-		err = proto.Unmarshal(msg.Body, &notification)
-		if err != nil {
-			return err
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case msg := <-msgs:
+			var notification notification_api.UserNotification
+			err = proto.Unmarshal(msg.Body, &notification)
+			if err != nil {
+				return err
+			}
+			n.resultChan <- &notification
 		}
-		n.resultChan <- &notification
 	}
-	return nil
 }
 
 func (n *Notifier) Notifications() <-chan *notification_api.UserNotification {

@@ -38,22 +38,17 @@ func (s *ServiceTestSuite) TestGetTextFromVoice_CreateTask() {
 }
 
 func (s *ServiceTestSuite) TestHandleSttResults() {
-	c := make(chan models.SttResult, 10)
-	c <- models.SttResult{
-		UserID:    userId,
-		MessageID: uint64(msgID),
-		Text:      voiceTranscription,
-	}
-	close(c)
-	s.sttMock.EXPECT().ResultsChan().Return(c)
-
 	s.repoMock.EXPECT().SaveMessageTranscription(uint64(msgID), voiceTranscription).Return(nil)
 	s.userNotifierMock.EXPECT().SendTranscribedMessage(userId, models.MessageTranscibed{
 		MessageID: msgID,
 		Text:      voiceTranscription,
 	}).Return(nil)
 
-	err := s.service.Start()
+	err := s.service.HandleSttResult(models.SttResult{
+		UserID:    userId,
+		MessageID: uint64(msgID),
+		Text:      voiceTranscription,
+	})
 
 	s.Nil(err)
 }
