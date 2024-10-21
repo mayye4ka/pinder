@@ -20,8 +20,9 @@ const (
 )
 
 type ServerCtrl struct {
-	server *Server
-	port   int
+	server     *Server
+	port       int
+	grpcServer *grpc.Server
 }
 
 func New(svc Service, auth Authenticator, port int) *ServerCtrl {
@@ -39,20 +40,25 @@ func (c *ServerCtrl) Start(ctx context.Context) error {
 		grpc.UnaryInterceptor(c.authInterceptor),
 		grpc.Creds(insecure.NewCredentials()),
 	}
-	srv := grpc.NewServer(opts...)
-	public_api.RegisterPinderServer(srv, c.server)
+	c.grpcServer = grpc.NewServer(opts...)
+	public_api.RegisterPinderServer(c.grpcServer, c.server)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", c.port))
 	if err != nil {
 		log.Fatal(err)
 	}
 	go func() {
 		<-ctx.Done()
-		srv.GracefulStop()
+		c.grpcServer.GracefulStop()
 	}()
-	return srv.Serve(lis)
+	return c.grpcServer.Serve(lis)
 }
 
 func (c *ServerCtrl) Stop(ctx context.Context) error {
+	go func() {
+		<-ctx.Done()
+		c.grpcServer.Stop()
+	}()
+	c.grpcServer.GracefulStop()
 	return nil
 }
 

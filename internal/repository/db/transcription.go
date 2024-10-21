@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"github.com/mayye4ka/pinder/internal/errs"
@@ -16,9 +17,9 @@ func (MessageTranscription) TableName() string {
 	return "transcriptions"
 }
 
-func (r *Repository) GetMessageTranscription(msgID uint64) (string, bool, error) {
+func (r *Repository) GetMessageTranscription(ctx context.Context, msgID uint64) (string, bool, error) {
 	var t MessageTranscription
-	res := r.db.Model(&MessageTranscription{}).Where("message_id = ?", msgID).First(&t)
+	res := r.db.WithContext(ctx).Model(&MessageTranscription{}).Where("message_id = ?", msgID).First(&t)
 	if res.Error != nil && errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return "", false, nil
 	} else if res.Error != nil {
@@ -31,8 +32,8 @@ func (r *Repository) GetMessageTranscription(msgID uint64) (string, bool, error)
 	return t.Transcription, true, nil
 }
 
-func (r *Repository) SaveMessageTranscription(msgID uint64, text string) error {
-	res := r.db.Create(MessageTranscription{
+func (r *Repository) SaveMessageTranscription(ctx context.Context, msgID uint64, text string) error {
+	res := r.db.WithContext(ctx).Create(MessageTranscription{
 		MessageID:     msgID,
 		Transcription: text,
 	})

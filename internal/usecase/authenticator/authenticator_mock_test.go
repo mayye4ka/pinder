@@ -10,6 +10,7 @@
 package authenticator
 
 import (
+	context "context"
 	reflect "reflect"
 
 	models "github.com/mayye4ka/pinder/internal/models"
@@ -40,31 +41,31 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockRepository) CreateUser(phoneNumber, passHash string) (models.User, error) {
+func (m *MockRepository) CreateUser(ctx context.Context, phoneNumber, passHash string) (models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", phoneNumber, passHash)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, phoneNumber, passHash)
 	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockRepositoryMockRecorder) CreateUser(phoneNumber, passHash any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) CreateUser(ctx, phoneNumber, passHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockRepository)(nil).CreateUser), phoneNumber, passHash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockRepository)(nil).CreateUser), ctx, phoneNumber, passHash)
 }
 
 // GetUserByCreds mocks base method.
-func (m *MockRepository) GetUserByCreds(phoneNumber, passHash string) (models.User, error) {
+func (m *MockRepository) GetUserByCreds(ctx context.Context, phoneNumber, passHash string) (models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserByCreds", phoneNumber, passHash)
+	ret := m.ctrl.Call(m, "GetUserByCreds", ctx, phoneNumber, passHash)
 	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserByCreds indicates an expected call of GetUserByCreds.
-func (mr *MockRepositoryMockRecorder) GetUserByCreds(phoneNumber, passHash any) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) GetUserByCreds(ctx, phoneNumber, passHash any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByCreds", reflect.TypeOf((*MockRepository)(nil).GetUserByCreds), phoneNumber, passHash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByCreds", reflect.TypeOf((*MockRepository)(nil).GetUserByCreds), ctx, phoneNumber, passHash)
 }

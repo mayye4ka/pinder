@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -29,9 +30,9 @@ const (
 	PAStateMismatch PAState = "mismatch"
 )
 
-func (r *Repository) GetLatestPairAttempt(user1, user2 uint64) (models.PairAttempt, error) {
+func (r *Repository) GetLatestPairAttempt(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error) {
 	var pair PairAttempt
-	res := r.db.Model(&PairAttempt{}).
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).
 		Where("user1 = ? and user2 = ?", user1, user2).
 		Order("created_at desc").First(&pair)
 	if res.Error != nil {
@@ -44,9 +45,9 @@ func (r *Repository) GetLatestPairAttempt(user1, user2 uint64) (models.PairAttem
 	return mapPairAttempt(pair), nil
 }
 
-func (r *Repository) GetPendingPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error) {
+func (r *Repository) GetPendingPairAttemptByUserPair(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error) {
 	var pair PairAttempt
-	res := r.db.Model(&PairAttempt{}).
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).
 		Where("((user1 = ? and user2 = ?) or (user2 = ? and user1 = ?)) and state = ?",
 			user1, user2, user1, user2, models.PAStatePending).
 		First(&pair)
@@ -60,9 +61,9 @@ func (r *Repository) GetPendingPairAttemptByUserPair(user1, user2 uint64) (model
 	return mapPairAttempt(pair), nil
 }
 
-func (r *Repository) GetLatestPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error) {
+func (r *Repository) GetLatestPairAttemptByUserPair(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error) {
 	var pair PairAttempt
-	res := r.db.Model(&PairAttempt{}).
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).
 		Where("((user1 = ? and user2 = ?) or (user2 = ? and user1 = ?))",
 			user1, user2, user1, user2).
 		Order("created_at desc").
@@ -77,8 +78,8 @@ func (r *Repository) GetLatestPairAttemptByUserPair(user1, user2 uint64) (models
 	return mapPairAttempt(pair), nil
 }
 
-func (r *Repository) FinishPairAttempt(PAID uint64, state models.PAState) error {
-	res := r.db.Model(&PairAttempt{}).Where("id = ?", PAID).Update("state", unmapPaState(state))
+func (r *Repository) FinishPairAttempt(ctx context.Context, PAID uint64, state models.PAState) error {
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).Where("id = ?", PAID).Update("state", unmapPaState(state))
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't finish pair attempt")
 		return &errs.CodableError{
@@ -89,14 +90,14 @@ func (r *Repository) FinishPairAttempt(PAID uint64, state models.PAState) error 
 	return nil
 }
 
-func (r *Repository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error) {
+func (r *Repository) CreatePairAttempt(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error) {
 	pa := PairAttempt{
 		User1:     user1,
 		User2:     user2,
 		State:     PAStatePending,
 		CreatedAt: time.Now(),
 	}
-	res := r.db.Create(&pa)
+	res := r.db.WithContext(ctx).Create(&pa)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't create pair attempt")
 		return models.PairAttempt{}, &errs.CodableError{
@@ -107,9 +108,9 @@ func (r *Repository) CreatePairAttempt(user1, user2 uint64) (models.PairAttempt,
 	return mapPairAttempt(pa), nil
 }
 
-func (r *Repository) GetWhoLikedMe(userID uint64) (uint64, error) {
+func (r *Repository) GetWhoLikedMe(ctx context.Context, userID uint64) (uint64, error) {
 	var pair PairAttempt
-	res := r.db.Model(&PairAttempt{}).
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).
 		Where("user2 = ? and state = ?", userID, PAStatePending).
 		Order("created_at").First(&pair)
 	if res.Error != nil {
@@ -125,9 +126,9 @@ func (r *Repository) GetWhoLikedMe(userID uint64) (uint64, error) {
 	return pair.User1, nil
 }
 
-func (r *Repository) GetPendingPairAttempts(user1ID uint64) ([]models.PairAttempt, error) {
+func (r *Repository) GetPendingPairAttempts(ctx context.Context, user1ID uint64) ([]models.PairAttempt, error) {
 	var pas []PairAttempt
-	res := r.db.Model(&PairAttempt{}).
+	res := r.db.WithContext(ctx).Model(&PairAttempt{}).
 		Where("user1 = ? and state = ?", user1ID, PAStatePending).
 		Find(&pas)
 	if res.Error != nil {

@@ -32,6 +32,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const stopTimeout = time.Minute
+
 type Starter interface {
 	Start(context.Context) error
 }
@@ -129,7 +131,10 @@ func main() {
 
 	fileStorage := file_storage.New(minio)
 	repository := repository.New(db, &logger)
-	sttTaskCreator := stt.NewTaskCreator(rabbit)
+	sttTaskCreator, err := stt.NewTaskCreator(rabbit)
+	if err != nil {
+		log.Fatal(err)
+	}
 	notifier := notifications.NewNotifier(rabbit)
 
 	auth := authenticator.New(repository, &logger)
@@ -162,7 +167,7 @@ func main() {
 	case <-egCtx.Done():
 	}
 
-	stopCtx, stopCancel := context.WithTimeout(context.Background(), time.Minute)
+	stopCtx, stopCancel := context.WithTimeout(context.Background(), stopTimeout)
 	defer stopCancel()
 	eg, egCtx = errgroup.WithContext(stopCtx)
 

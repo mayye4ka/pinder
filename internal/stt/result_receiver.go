@@ -7,23 +7,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type SttTaskCreator struct {
-	rabbit *amqp.Connection
-}
-
-func NewTaskCreator(rabbit *amqp.Connection) *SttTaskCreator {
-	return &SttTaskCreator{
-		rabbit: rabbit,
-	}
-}
-
-func (s *SttTaskCreator) PutTask(task models.SttTask) error {
-	// TODO: put to rabbit
-	return nil
-}
-
 type SttResultHandler interface {
-	HandleSttResult(res models.SttResult) error
+	HandleSttResult(ctx context.Context, res models.SttResult) error
 }
 
 type SttResultReceiver struct {
@@ -45,7 +30,5 @@ func (s *SttResultReceiver) Start(ctx context.Context) error {
 }
 
 func (s *SttResultReceiver) Stop(ctx context.Context) error {
-	<-ctx.Done()
-	// TODO: receive from rabbit and call handler
 	return nil
 }

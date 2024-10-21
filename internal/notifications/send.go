@@ -1,6 +1,8 @@
 package notifications
 
 import (
+	"context"
+
 	public_api "github.com/mayye4ka/pinder-api/api/go"
 	notification_api "github.com/mayye4ka/pinder-api/notifications/go"
 	"github.com/mayye4ka/pinder/internal/models"
@@ -8,8 +10,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func (n *Notifier) SendMessage(userId uint64, notification models.MessageSend) error {
+func (n *Notifier) SendMessage(ctx context.Context, userId uint64, notification models.MessageSend) error {
 	return n.notify(
+		ctx,
 		userId,
 		&public_api.DataPackage{
 			Data: &public_api.DataPackage_IncomingMessageNotification{
@@ -25,8 +28,9 @@ func (n *Notifier) SendMessage(userId uint64, notification models.MessageSend) e
 	)
 }
 
-func (n *Notifier) NotifyLiked(userId uint64, notification models.LikeNotification) error {
+func (n *Notifier) NotifyLiked(ctx context.Context, userId uint64, notification models.LikeNotification) error {
 	return n.notify(
+		ctx,
 		userId,
 		&public_api.DataPackage{
 			Data: &public_api.DataPackage_IncomingLikeNotification{
@@ -39,8 +43,9 @@ func (n *Notifier) NotifyLiked(userId uint64, notification models.LikeNotificati
 	)
 }
 
-func (n *Notifier) NotifyMatch(userId uint64, notification models.MatchNotification) error {
+func (n *Notifier) NotifyMatch(ctx context.Context, userId uint64, notification models.MatchNotification) error {
 	return n.notify(
+		ctx,
 		userId,
 		&public_api.DataPackage{
 			Data: &public_api.DataPackage_MatchNotification{
@@ -53,8 +58,9 @@ func (n *Notifier) NotifyMatch(userId uint64, notification models.MatchNotificat
 	)
 }
 
-func (n *Notifier) SendTranscribedMessage(userId uint64, notification models.MessageTranscibed) error {
+func (n *Notifier) SendTranscribedMessage(ctx context.Context, userId uint64, notification models.MessageTranscibed) error {
 	return n.notify(
+		ctx,
 		userId,
 		&public_api.DataPackage{
 			Data: &public_api.DataPackage_VoiceTranscribedNotification{
@@ -78,7 +84,7 @@ func msgContentTypeToProto(ct models.MsgContentType) public_api.MESSAGE_CONTENT_
 	}
 }
 
-func (n *Notifier) notify(userId uint64, data *public_api.DataPackage) error {
+func (n *Notifier) notify(ctx context.Context, userId uint64, data *public_api.DataPackage) error {
 	bytes, err := proto.Marshal(&notification_api.UserNotification{
 		UserId:      userId,
 		DataPackage: data,
@@ -91,7 +97,8 @@ func (n *Notifier) notify(userId uint64, data *public_api.DataPackage) error {
 		return err
 	}
 	defer ch.Close()
-	err = ch.Publish(
+	err = ch.PublishWithContext(
+		ctx,
 		notificationsExchangeName,
 		"",
 		false,

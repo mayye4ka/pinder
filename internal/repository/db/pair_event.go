@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -34,13 +35,13 @@ const (
 	PETypePairCreated       PEType = "pair_created"
 )
 
-func (r *Repository) CreateEvent(PAID uint64, eventType models.PEType) error {
+func (r *Repository) CreateEvent(ctx context.Context, PAID uint64, eventType models.PEType) error {
 	pairEvent := PairEvent{
 		PAID:      PAID,
 		CreatedAt: time.Now(),
 		EventType: unmapPeType(eventType),
 	}
-	res := r.db.Create(&pairEvent)
+	res := r.db.WithContext(ctx).Create(&pairEvent)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't create event")
 		return &errs.CodableError{
@@ -51,9 +52,9 @@ func (r *Repository) CreateEvent(PAID uint64, eventType models.PEType) error {
 	return nil
 }
 
-func (r *Repository) GetLastEvent(PAID uint64) (models.PairEvent, error) {
+func (r *Repository) GetLastEvent(ctx context.Context, PAID uint64) (models.PairEvent, error) {
 	var e PairEvent
-	res := r.db.Model(&PairEvent{}).Where("pa_id = ?", PAID).Order("created_at desc, id desc").First(&e)
+	res := r.db.WithContext(ctx).Model(&PairEvent{}).Where("pa_id = ?", PAID).Order("created_at desc, id desc").First(&e)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return models.PairEvent{}, &errs.CodableError{

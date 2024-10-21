@@ -10,7 +10,7 @@ import (
 )
 
 func (s *Service) getUserPhotos(ctx context.Context, userId uint64) ([]models.PhotoShowcase, error) {
-	photos, err := s.repository.GetUserPhotos(userId)
+	photos, err := s.repository.GetUserPhotos(ctx, userId)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get user photos")
 	}
@@ -37,7 +37,7 @@ func (s *Service) AddPhoto(ctx context.Context, photo string) error {
 	if err != nil {
 		return errors.Wrap(err, "can't save profile photo")
 	}
-	return s.repository.AddPhoto(userId, key)
+	return s.repository.AddPhoto(ctx, userId, key)
 }
 
 func (s *Service) DeletePhoto(ctx context.Context, photoKey string) error {
@@ -49,7 +49,7 @@ func (s *Service) DeletePhoto(ctx context.Context, photoKey string) error {
 	if err != nil {
 		return errors.Wrap(err, "can't delete profile photo")
 	}
-	return s.repository.DeleteUserPhoto(userId, photoKey)
+	return s.repository.DeleteUserPhoto(ctx, userId, photoKey)
 }
 
 func (s *Service) ReorderPhotos(ctx context.Context, newOrder []string) error {
@@ -57,7 +57,7 @@ func (s *Service) ReorderPhotos(ctx context.Context, newOrder []string) error {
 	if userId == 0 {
 		return errUnauthenticated
 	}
-	photos, err := s.repository.GetUserPhotos(userId)
+	photos, err := s.repository.GetUserPhotos(ctx, userId)
 	if err != nil {
 		return errors.Wrap(err, "can't reorder photos")
 	}
@@ -76,7 +76,7 @@ func (s *Service) ReorderPhotos(ctx context.Context, newOrder []string) error {
 			Message: "should specify all photos to reorder",
 		}
 	}
-	err = s.repository.ReorderPhotos(newOrder)
+	err = s.repository.ReorderPhotos(ctx, newOrder)
 	if err != nil {
 		return errors.Wrap(err, "can't reorder photos")
 	}

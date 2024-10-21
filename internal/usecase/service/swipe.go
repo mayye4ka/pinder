@@ -11,7 +11,7 @@ func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict mo
 	if userId == 0 {
 		return errUnauthenticated
 	}
-	pa, err := s.repository.GetPendingPairAttemptByUserPair(userId, candidateId)
+	pa, err := s.repository.GetPendingPairAttemptByUserPair(ctx, userId, candidateId)
 	if err != nil {
 		return errors.Wrap(err, "can't get pending pa by user pair")
 	}
@@ -25,13 +25,13 @@ func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict mo
 	} else if swipeVerdict == models.SwipeVerdictDislike && pa.User2 == userId {
 		eventType = models.PETypeUser2Disliked
 	}
-	err = s.repository.CreateEvent(pa.ID, eventType)
+	err = s.repository.CreateEvent(ctx, pa.ID, eventType)
 	if err != nil {
 		return errors.Wrap(err, "can't create event")
 	}
 
 	if swipeVerdict == models.SwipeVerdictDislike {
-		err := s.repository.FinishPairAttempt(pa.ID, models.PAStateMismatch)
+		err := s.repository.FinishPairAttempt(ctx, pa.ID, models.PAStateMismatch)
 		if err != nil {
 			return errors.Wrap(err, "can't finish pair attempt")
 		}
@@ -47,11 +47,11 @@ func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict mo
 		if err != nil {
 			return errors.Wrap(err, "can't notify match")
 		}
-		err = s.repository.FinishPairAttempt(pa.ID, models.PAStateMatch)
+		err = s.repository.FinishPairAttempt(ctx, pa.ID, models.PAStateMatch)
 		if err != nil {
 			return errors.Wrap(err, "can't finish pair attempt")
 		}
-		err = s.repository.CreateChat(pa.User1, pa.User2)
+		err = s.repository.CreateChat(ctx, pa.User1, pa.User2)
 		if err != nil {
 			return errors.Wrap(err, "can't create chat")
 		}
@@ -60,11 +60,11 @@ func (s *Service) Swipe(ctx context.Context, candidateId uint64, swipeVerdict mo
 }
 
 func (s *Service) notifyLikedUser(ctx context.Context, whoLiked, whomLiked uint64) error {
-	prof, err := s.repository.GetProfile(whoLiked)
+	prof, err := s.repository.GetProfile(ctx, whoLiked)
 	if err != nil {
 		return errors.Wrap(err, "can't get profile")
 	}
-	photos, err := s.repository.GetUserPhotos(whoLiked)
+	photos, err := s.repository.GetUserPhotos(ctx, whoLiked)
 	if err != nil {
 		return errors.Wrap(err, "can't get user photos")
 	}
@@ -72,7 +72,7 @@ func (s *Service) notifyLikedUser(ctx context.Context, whoLiked, whomLiked uint6
 	if err != nil {
 		return errors.Wrap(err, "can't make profile photo link")
 	}
-	err = s.userNotifier.NotifyLiked(whomLiked, models.LikeNotification{
+	err = s.userNotifier.NotifyLiked(ctx, whomLiked, models.LikeNotification{
 		Name:  prof.Name,
 		Photo: link,
 	})
@@ -95,11 +95,11 @@ func (s *Service) notifyMatch(ctx context.Context, user1, user2 uint64) error {
 }
 
 func (s *Service) oneDirectionalNotifyMatch(ctx context.Context, sender, receiver uint64) error {
-	prof, err := s.repository.GetProfile(sender)
+	prof, err := s.repository.GetProfile(ctx, sender)
 	if err != nil {
 		return errors.Wrap(err, "can't get profile")
 	}
-	photos, err := s.repository.GetUserPhotos(sender)
+	photos, err := s.repository.GetUserPhotos(ctx, sender)
 	if err != nil {
 		return errors.Wrap(err, "can't get user photos")
 	}
@@ -107,7 +107,7 @@ func (s *Service) oneDirectionalNotifyMatch(ctx context.Context, sender, receive
 	if err != nil {
 		return errors.Wrap(err, "can't make profile photo link")
 	}
-	err = s.userNotifier.NotifyMatch(receiver, models.MatchNotification{
+	err = s.userNotifier.NotifyMatch(ctx, receiver, models.MatchNotification{
 		Name:  prof.Name,
 		Photo: link,
 	})

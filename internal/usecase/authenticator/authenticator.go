@@ -21,8 +21,8 @@ type Authenticator struct {
 }
 
 type Repository interface {
-	CreateUser(phoneNumber, passHash string) (models.User, error)
-	GetUserByCreds(phoneNumber, passHash string) (models.User, error)
+	CreateUser(ctx context.Context, phoneNumber, passHash string) (models.User, error)
+	GetUserByCreds(ctx context.Context, phoneNumber, passHash string) (models.User, error)
 }
 
 func New(repo Repository, logger *zerolog.Logger) *Authenticator {
@@ -34,7 +34,7 @@ func New(repo Repository, logger *zerolog.Logger) *Authenticator {
 
 func (a *Authenticator) Register(ctx context.Context, phone, password string) (string, error) {
 	passHash := getPassHash(password)
-	user, err := a.repo.CreateUser(phone, passHash)
+	user, err := a.repo.CreateUser(ctx, phone, passHash)
 	if err != nil {
 		return "", errors.Wrap(err, "can't register new user")
 	}
@@ -47,7 +47,7 @@ func (a *Authenticator) Register(ctx context.Context, phone, password string) (s
 
 func (a *Authenticator) Login(ctx context.Context, phone, password string) (string, error) {
 	passHash := getPassHash(password)
-	user, err := a.repo.GetUserByCreds(phone, passHash)
+	user, err := a.repo.GetUserByCreds(ctx, phone, passHash)
 	if err != nil {
 		return "", errors.Wrap(err, "can't get user by creds")
 	}

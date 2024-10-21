@@ -28,35 +28,35 @@ type Service struct {
 }
 
 type Repository interface {
-	GetProfile(uint64) (models.Profile, error)
-	PutProfile(models.Profile) error
-	AddPhoto(userID uint64, photoKey string) error
-	GetUserPhotos(userID uint64) ([]string, error)
-	DeleteUserPhoto(userID uint64, photoKey string) error
-	ReorderPhotos(newOrder []string) error
-	GetPreferences(uint64) (models.Preferences, error)
-	PutPreferences(models.Preferences) error
-	GetAllValidUsers() ([]uint64, error)
+	GetProfile(ctx context.Context, userID uint64) (models.Profile, error)
+	PutProfile(ctx context.Context, newProfile models.Profile) error
+	AddPhoto(ctx context.Context, userID uint64, photoKey string) error
+	GetUserPhotos(ctx context.Context, userID uint64) ([]string, error)
+	DeleteUserPhoto(ctx context.Context, userID uint64, photoKey string) error
+	ReorderPhotos(ctx context.Context, newOrder []string) error
+	GetPreferences(ctx context.Context, userID uint64) (models.Preferences, error)
+	PutPreferences(ctx context.Context, newPreferences models.Preferences) error
+	GetAllValidUsers(ctx context.Context) ([]uint64, error)
 
-	GetPendingPairAttempts(user1ID uint64) ([]models.PairAttempt, error)
-	GetWhoLikedMe(userID uint64) (uint64, error)
-	CreateEvent(PAID uint64, eventType models.PEType) error
-	GetLatestPairAttempt(user1, user2 uint64) (models.PairAttempt, error)
-	GetLatestPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error)
-	GetPendingPairAttemptByUserPair(user1, user2 uint64) (models.PairAttempt, error)
-	CreatePairAttempt(user1, user2 uint64) (models.PairAttempt, error)
-	FinishPairAttempt(PAID uint64, PAState models.PAState) error
-	GetLastEvent(PAID uint64) (models.PairEvent, error)
+	GetPendingPairAttempts(ctx context.Context, user1ID uint64) ([]models.PairAttempt, error)
+	GetWhoLikedMe(ctx context.Context, userID uint64) (uint64, error)
+	CreateEvent(ctx context.Context, PAID uint64, eventType models.PEType) error
+	GetLatestPairAttempt(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error)
+	GetLatestPairAttemptByUserPair(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error)
+	GetPendingPairAttemptByUserPair(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error)
+	CreatePairAttempt(ctx context.Context, user1, user2 uint64) (models.PairAttempt, error)
+	FinishPairAttempt(ctx context.Context, PAID uint64, PAState models.PAState) error
+	GetLastEvent(ctx context.Context, PAID uint64) (models.PairEvent, error)
 
-	CreateChat(user1, user2 uint64) error
-	GetChats(userID uint64) ([]models.Chat, error)
-	GetChat(id uint64) (models.Chat, error)
-	SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error)
-	GetMessages(chatID uint64) ([]models.Message, error)
-	GetMessage(msgID uint64) (models.Message, error)
+	CreateChat(ctx context.Context, user1, user2 uint64) error
+	GetChats(ctx context.Context, userID uint64) ([]models.Chat, error)
+	GetChat(ctx context.Context, id uint64) (models.Chat, error)
+	SendMessage(ctx context.Context, chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error)
+	GetMessages(ctx context.Context, chatID uint64) ([]models.Message, error)
+	GetMessage(ctx context.Context, msgID uint64) (models.Message, error)
 
-	GetMessageTranscription(id uint64) (string, bool, error)
-	SaveMessageTranscription(id uint64, text string) error
+	GetMessageTranscription(ctx context.Context, id uint64) (string, bool, error)
+	SaveMessageTranscription(ctx context.Context, id uint64, text string) error
 }
 
 type FileStorage interface {
@@ -73,14 +73,14 @@ type FileStorage interface {
 }
 
 type UserNotifier interface {
-	NotifyMatch(userId uint64, notification models.MatchNotification) error
-	NotifyLiked(userId uint64, notification models.LikeNotification) error
-	SendMessage(userId uint64, notification models.MessageSend) error
-	SendTranscribedMessage(userId uint64, notification models.MessageTranscibed) error
+	NotifyMatch(ctx context.Context, userId uint64, notification models.MatchNotification) error
+	NotifyLiked(ctx context.Context, userId uint64, notification models.LikeNotification) error
+	SendMessage(ctx context.Context, userId uint64, notification models.MessageSend) error
+	SendTranscribedMessage(ctx context.Context, userId uint64, notification models.MessageTranscibed) error
 }
 
 type Stt interface {
-	PutTask(task models.SttTask) error
+	PutTask(ctx context.Context, task models.SttTask) error
 }
 
 func New(repo Repository, filestorage FileStorage, userNotifier UserNotifier, stt Stt) *Service {

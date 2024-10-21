@@ -65,6 +65,12 @@ func (n *Notifier) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
+			close(n.resultChan)
+			close(n.finishDone)
+			return nil
+		case <-n.finish:
+			close(n.resultChan)
+			close(n.finishDone)
 			return nil
 		case msg := <-msgs:
 			var notification notification_api.UserNotification
@@ -78,6 +84,11 @@ func (n *Notifier) Start(ctx context.Context) error {
 }
 
 func (n *Notifier) Stop(ctx context.Context) error {
+	close(n.finish)
+	select {
+	case <-n.finishDone:
+	case <-ctx.Done():
+	}
 	return nil
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	public_api "github.com/mayye4ka/pinder-api/api/go"
 	notification_api "github.com/mayye4ka/pinder-api/notifications/go"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
@@ -28,6 +29,10 @@ type WsServer struct {
 
 	connStore   map[uint64]map[string]*websocket.Conn
 	connStoreMu sync.RWMutex
+
+	httpServer              *http.Server
+	finishNotifications     chan struct{}
+	finishNotificationsDone chan struct{}
 }
 
 type Authenticator interface {
@@ -45,6 +50,9 @@ func NewWsServer(auth Authenticator, ntfcProducer NotificationProducer, port int
 		port:                 port,
 
 		connStore: map[uint64]map[string]*websocket.Conn{},
+
+		finishNotifications:     make(chan struct{}),
+		finishNotificationsDone: make(chan struct{}),
 	}
 }
 
@@ -120,31 +128,25 @@ func (s *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *WsServer) Start(ctx context.Context) error {
-	http.HandleFunc("/ws", s.wsHandler)
-	go func() {
-		httpServer := &http.Server{
-			Addr: fmt.Sprintf(":%d", s.port),
-		}
-		go func() {
-			<-ctx.Done()
-			httpServer.Shutdown(context.Background())
-		}()
-		err := httpServer.ListenAndServe()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	go func() {
-		err := s.startNotificationSending(ctx)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-	select {}
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return s.startHttpServer(ectx)
+	})
+	eg.Go(func() error {
+		return s.startNotificationSending(ectx)
+	})
+	return eg.Wait()
 }
 
 func (s *WsServer) Stop(ctx context.Context) error {
-	return nil
+	eg, ectx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return s.stopHttpServer(ectx)
+	})
+	eg.Go(func() error {
+		return s.stopNotificationSending(ectx)
+	})
+	return eg.Wait()
 }
 
 func (s *WsServer) startNotificationSending(ctx context.Context) error {
@@ -152,6 +154,10 @@ func (s *WsServer) startNotificationSending(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
+			close(s.finishNotificationsDone)
+			return nil
+		case <-s.finishNotifications:
+			close(s.finishNotificationsDone)
 			return nil
 		case n := <-c:
 			err := s.notify(n.UserId, n.DataPackage)
@@ -160,4 +166,29 @@ func (s *WsServer) startNotificationSending(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (s *WsServer) stopNotificationSending(ctx context.Context) error {
+	close(s.finishNotifications)
+	select {
+	case <-s.finishNotificationsDone:
+	case <-ctx.Done():
+	}
+	return nil
+}
+
+func (s *WsServer) startHttpServer(ctx context.Context) error {
+	http.HandleFunc("/ws", s.wsHandler)
+	s.httpServer = &http.Server{
+		Addr: fmt.Sprintf(":%d", s.port),
+	}
+	go func() {
+		<-ctx.Done()
+		s.httpServer.Shutdown(ctx)
+	}()
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *WsServer) stopHttpServer(ctx context.Context) error {
+	return s.httpServer.Shutdown(ctx)
 }

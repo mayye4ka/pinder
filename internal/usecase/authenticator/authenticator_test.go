@@ -33,7 +33,7 @@ type AuthenticatorTestSuite struct {
 }
 
 func (s *AuthenticatorTestSuite) TestRegisterUser() {
-	s.repoMock.EXPECT().CreateUser(phoneNumber, passHash).Return(models.User{ID: userId}, nil)
+	s.repoMock.EXPECT().CreateUser(testCtx, phoneNumber, passHash).Return(models.User{ID: userId}, nil)
 
 	gotToken, err := s.authenticator.Register(testCtx, phoneNumber, password)
 
@@ -42,7 +42,7 @@ func (s *AuthenticatorTestSuite) TestRegisterUser() {
 }
 
 func (s *AuthenticatorTestSuite) TestLoginUser() {
-	s.repoMock.EXPECT().GetUserByCreds(phoneNumber, passHash).Return(models.User{ID: userId}, nil)
+	s.repoMock.EXPECT().GetUserByCreds(testCtx, phoneNumber, passHash).Return(models.User{ID: userId}, nil)
 
 	gotToken, err := s.authenticator.Login(testCtx, phoneNumber, password)
 

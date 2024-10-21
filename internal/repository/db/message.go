@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -30,7 +31,7 @@ func (Message) TableName() string {
 	return "messages"
 }
 
-func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error) {
+func (r *Repository) SendMessage(ctx context.Context, chatID, sender uint64, contentType models.MsgContentType, payload string) (models.Message, error) {
 	message := Message{
 		ChatID:      chatID,
 		SenderID:    sender,
@@ -38,7 +39,7 @@ func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgCo
 		Payload:     payload,
 		CreatedAt:   time.Now(),
 	}
-	res := r.db.Create(&message)
+	res := r.db.WithContext(ctx).Create(&message)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't send message")
 		return models.Message{}, &errs.CodableError{
@@ -49,9 +50,9 @@ func (r *Repository) SendMessage(chatID, sender uint64, contentType models.MsgCo
 	return mapMessage(message), nil
 }
 
-func (r *Repository) GetMessages(chatID uint64) ([]models.Message, error) {
+func (r *Repository) GetMessages(ctx context.Context, chatID uint64) ([]models.Message, error) {
 	var messages []Message
-	res := r.db.Model(&Message{}).Where("chat_id = ?", chatID).Order("created_at").Find(&messages)
+	res := r.db.WithContext(ctx).Model(&Message{}).Where("chat_id = ?", chatID).Order("created_at").Find(&messages)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't get messages in this chat")
 		return nil, &errs.CodableError{
@@ -62,9 +63,9 @@ func (r *Repository) GetMessages(chatID uint64) ([]models.Message, error) {
 	return mapMessages(messages), nil
 }
 
-func (r *Repository) GetMessage(msgID uint64) (models.Message, error) {
+func (r *Repository) GetMessage(ctx context.Context, msgID uint64) (models.Message, error) {
 	var message Message
-	res := r.db.Model(&Message{}).Where("id = ?", msgID).First(&message)
+	res := r.db.WithContext(ctx).Model(&Message{}).Where("id = ?", msgID).First(&message)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return models.Message{}, &errs.CodableError{

@@ -13,11 +13,11 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 	if userId == 0 {
 		return "", false, errUnauthenticated
 	}
-	msg, err := s.repository.GetMessage(messageId)
+	msg, err := s.repository.GetMessage(ctx, messageId)
 	if err != nil {
 		return "", false, errors.Wrap(err, "can't get message")
 	}
-	chat, err := s.repository.GetChat(msg.ChatID)
+	chat, err := s.repository.GetChat(ctx, msg.ChatID)
 	if err != nil {
 		return "", false, errors.Wrap(err, "can't get chat")
 	}
@@ -31,7 +31,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 		}
 	}
 
-	text, found, err := s.repository.GetMessageTranscription(messageId)
+	text, found, err := s.repository.GetMessageTranscription(ctx, messageId)
 	if err != nil {
 		return "", false, errors.Wrap(err, "can't get message transcription")
 	}
@@ -44,7 +44,7 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 		return "", false, errors.Wrap(err, "can't get chat voice")
 	}
 
-	err = s.stt.PutTask(models.SttTask{
+	err = s.stt.PutTask(ctx, models.SttTask{
 		UserID:    userId,
 		MessageID: msg.ID,
 		Speech:    speech,
@@ -55,12 +55,12 @@ func (s *Service) GetTextFromVoice(ctx context.Context, messageId uint64) (strin
 	return "", true, nil
 }
 
-func (s *Service) HandleSttResult(res models.SttResult) error {
-	err := s.repository.SaveMessageTranscription(res.MessageID, res.Text)
+func (s *Service) HandleSttResult(ctx context.Context, res models.SttResult) error {
+	err := s.repository.SaveMessageTranscription(ctx, res.MessageID, res.Text)
 	if err != nil {
 		return errors.Wrap(err, "can't save message transcription")
 	}
-	return s.userNotifier.SendTranscribedMessage(res.UserID, models.MessageTranscibed{
+	return s.userNotifier.SendTranscribedMessage(ctx, res.UserID, models.MessageTranscibed{
 		MessageID: res.MessageID,
 		Text:      res.Text,
 	})

@@ -23,7 +23,7 @@ func (s *Service) UpdProfile(ctx context.Context, newProfile models.Profile) err
 	if newProfile.Age == 0 || newProfile.LocationLat == 0 || newProfile.LocationLon == 0 {
 		return fmt.Errorf("bad profile")
 	}
-	err := s.repository.PutProfile(newProfile)
+	err := s.repository.PutProfile(ctx, newProfile)
 	if err != nil {
 		return errors.Wrap(err, "can't update profile")
 	}
@@ -35,7 +35,7 @@ func (s *Service) GetProfile(ctx context.Context) (models.ProfileShowcase, error
 	if userId == 0 {
 		return models.ProfileShowcase{}, errUnauthenticated
 	}
-	profile, err := s.repository.GetProfile(userId)
+	profile, err := s.repository.GetProfile(ctx, userId)
 	if err != nil {
 		return models.ProfileShowcase{}, errors.Wrap(err, "can't get profile")
 	}
@@ -55,7 +55,7 @@ func (s *Service) UpdPreferences(ctx context.Context, newPreferences models.Pref
 		return errUnauthenticated
 	}
 	newPreferences.UserID = userId
-	err := s.repository.PutPreferences(newPreferences)
+	err := s.repository.PutPreferences(ctx, newPreferences)
 	if err != nil {
 		return errors.Wrap(err, "can't update preferences")
 	}
@@ -67,7 +67,7 @@ func (s *Service) GetPreferences(ctx context.Context) (models.Preferences, error
 	if userId == 0 {
 		return models.Preferences{}, errUnauthenticated
 	}
-	preferences, err := s.repository.GetPreferences(userId)
+	preferences, err := s.repository.GetPreferences(ctx, userId)
 	if err != nil {
 		return models.Preferences{}, errors.Wrap(err, "can't get preferences")
 	}

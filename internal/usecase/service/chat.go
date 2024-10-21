@@ -37,18 +37,18 @@ func (s *Service) ListChats(ctx context.Context) ([]models.ChatShowcase, error) 
 	if userId == 0 {
 		return nil, errUnauthenticated
 	}
-	chats, err := s.repository.GetChats(userId)
+	chats, err := s.repository.GetChats(ctx, userId)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get chats by user id")
 	}
 	res := []models.ChatShowcase{}
 	for _, chat := range chats {
 		user2 := getWhoIsNotMe(chat.User1, chat.User2, userId)
-		prof, err := s.repository.GetProfile(user2)
+		prof, err := s.repository.GetProfile(ctx, user2)
 		if err != nil {
 			return nil, errors.Wrap(err, "can't get profile")
 		}
-		photos, err := s.repository.GetUserPhotos(user2)
+		photos, err := s.repository.GetUserPhotos(ctx, user2)
 		if err != nil {
 			return nil, errors.Wrap(err, "can't get user photos")
 		}
@@ -71,14 +71,14 @@ func (s *Service) ListMessages(ctx context.Context, chatId uint64) ([]models.Mes
 	if userId == 0 {
 		return nil, errUnauthenticated
 	}
-	chat, err := s.repository.GetChat(chatId)
+	chat, err := s.repository.GetChat(ctx, chatId)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get chat by id")
 	}
 	if chat.User1 != userId && chat.User2 != userId {
 		return nil, errPermissionDenied
 	}
-	messages, err := s.repository.GetMessages(chatId)
+	messages, err := s.repository.GetMessages(ctx, chatId)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get messages")
 	}
@@ -108,7 +108,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 	if userId == 0 {
 		return errUnauthenticated
 	}
-	chat, err := s.repository.GetChat(chatId)
+	chat, err := s.repository.GetChat(ctx, chatId)
 	if err != nil {
 		return errors.Wrap(err, "can't get chat")
 	}
@@ -128,7 +128,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 		}
 		payload = key
 	}
-	msg, err := s.repository.SendMessage(chatId, userId, contentType, payload)
+	msg, err := s.repository.SendMessage(ctx, chatId, userId, contentType, payload)
 	if err != nil {
 		return errors.Wrap(err, "can't send message")
 	}
@@ -141,7 +141,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId uint64, contentType mo
 		if recv != userId {
 			sentByMe = false
 		}
-		err = s.userNotifier.SendMessage(recv, models.MessageSend{
+		err = s.userNotifier.SendMessage(ctx, recv, models.MessageSend{
 			ChatID:      msg.ChatID,
 			MessageID:   msg.ID,
 			SentByMe:    sentByMe,

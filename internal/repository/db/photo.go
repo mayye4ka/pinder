@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"github.com/mayye4ka/pinder/internal/errs"
@@ -17,9 +18,9 @@ func (Photo) TableName() string {
 	return "photos"
 }
 
-func (r *Repository) getMaxPhotoOrder(userID uint64) (int, error) {
+func (r *Repository) getMaxPhotoOrder(ctx context.Context, userID uint64) (int, error) {
 	var maxPh Photo
-	res := r.db.Model(&Photo{}).Where("user_id = ?", userID).Order("order_n desc").First(&maxPh)
+	res := r.db.WithContext(ctx).Model(&Photo{}).Where("user_id = ?", userID).Order("order_n desc").First(&maxPh)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return 0, nil
@@ -33,15 +34,15 @@ func (r *Repository) getMaxPhotoOrder(userID uint64) (int, error) {
 	return maxPh.OrderN, nil
 }
 
-func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
-	maxOrder, err := r.getMaxPhotoOrder(userID)
+func (r *Repository) AddPhoto(ctx context.Context, userID uint64, photoKey string) error {
+	maxOrder, err := r.getMaxPhotoOrder(ctx, userID)
 	if err != nil {
 		return &errs.CodableError{
 			Code:    errs.CodeInternal,
 			Message: "can't get photo order",
 		}
 	}
-	res := r.db.Create(&Photo{
+	res := r.db.WithContext(ctx).Create(&Photo{
 		UserID:   userID,
 		PhotoKey: photoKey,
 		OrderN:   maxOrder + 1,
@@ -56,9 +57,9 @@ func (r *Repository) AddPhoto(userID uint64, photoKey string) error {
 	return nil
 }
 
-func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
+func (r *Repository) GetUserPhotos(ctx context.Context, userID uint64) ([]string, error) {
 	var photos []Photo
-	res := r.db.Model(&Photo{}).Where("user_id = ?", userID).Order("order_n").Find(&photos)
+	res := r.db.WithContext(ctx).Model(&Photo{}).Where("user_id = ?", userID).Order("order_n").Find(&photos)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't get user photos")
 		return nil, &errs.CodableError{
@@ -73,8 +74,8 @@ func (r *Repository) GetUserPhotos(userID uint64) ([]string, error) {
 	return result, nil
 }
 
-func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
-	res := r.db.Where("user_id = ? and photo_key = ?", userID, photoKey).Delete(&Photo{})
+func (r *Repository) DeleteUserPhoto(ctx context.Context, userID uint64, photoKey string) error {
+	res := r.db.WithContext(ctx).Where("user_id = ? and photo_key = ?", userID, photoKey).Delete(&Photo{})
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return &errs.CodableError{
@@ -91,8 +92,8 @@ func (r *Repository) DeleteUserPhoto(userID uint64, photoKey string) error {
 	return nil
 }
 
-func (r *Repository) updatePhotoOrder(photo string, newOrder int) error {
-	res := r.db.Model(&Photo{}).Where("photo_key = ?", photo).Update("order_n", newOrder)
+func (r *Repository) updatePhotoOrder(ctx context.Context, photo string, newOrder int) error {
+	res := r.db.WithContext(ctx).Model(&Photo{}).Where("photo_key = ?", photo).Update("order_n", newOrder)
 	if res.Error != nil {
 		r.logger.Err(res.Error).Msg("can't update photo order")
 		return &errs.CodableError{
@@ -103,9 +104,9 @@ func (r *Repository) updatePhotoOrder(photo string, newOrder int) error {
 	return nil
 }
 
-func (r *Repository) ReorderPhotos(photos []string) error {
+func (r *Repository) ReorderPhotos(ctx context.Context, photos []string) error {
 	for i, photo := range photos {
-		err := r.updatePhotoOrder(photo, i+1)
+		err := r.updatePhotoOrder(ctx, photo, i+1)
 		if err != nil {
 			return err
 		}

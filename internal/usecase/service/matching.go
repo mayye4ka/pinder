@@ -17,11 +17,11 @@ func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, erro
 		return models.ProfileShowcase{}, errUnauthenticated
 	}
 
-	myProfile, err := s.repository.GetProfile(userId)
+	myProfile, err := s.repository.GetProfile(ctx, userId)
 	if err != nil {
 		return models.ProfileShowcase{}, errors.Wrap(err, "can't get profile")
 	}
-	myPrefs, err := s.repository.GetPreferences(userId)
+	myPrefs, err := s.repository.GetPreferences(ctx, userId)
 	if err != nil {
 		return models.ProfileShowcase{}, errors.Wrap(err, "can't get preferences")
 	}
@@ -62,7 +62,7 @@ func (s *Service) NextPartner(ctx context.Context) (models.ProfileShowcase, erro
 }
 
 func (s *Service) submitHangingPartner(ctx context.Context, userID uint64) (*models.ProfileShowcase, error) {
-	hp, err := s.getHangingPartner(userID)
+	hp, err := s.getHangingPartner(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get hanging partner")
 	}
@@ -77,18 +77,18 @@ func (s *Service) submitHangingPartner(ctx context.Context, userID uint64) (*mod
 }
 
 func (s *Service) submitWhoLikedMe(ctx context.Context, userID uint64) (*models.ProfileShowcase, error) {
-	liker, err := s.repository.GetWhoLikedMe(userID)
+	liker, err := s.repository.GetWhoLikedMe(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get who liked me")
 	}
 	if liker == 0 {
 		return nil, nil
 	}
-	pa, err := s.repository.GetLatestPairAttempt(liker, userID)
+	pa, err := s.repository.GetLatestPairAttempt(ctx, liker, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't get latest pair attempt")
 	}
-	err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser2)
+	err = s.repository.CreateEvent(ctx, pa.ID, models.PETypeSentToUser2)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create event")
 	}
@@ -100,7 +100,7 @@ func (s *Service) submitWhoLikedMe(ctx context.Context, userID uint64) (*models.
 }
 
 func (s *Service) createProfileShowcase(ctx context.Context, candidateId uint64) (models.ProfileShowcase, error) {
-	profile, err := s.repository.GetProfile(candidateId)
+	profile, err := s.repository.GetProfile(ctx, candidateId)
 	if err != nil {
 		return models.ProfileShowcase{}, errors.Wrap(err, "can't get profile")
 	}
@@ -114,13 +114,13 @@ func (s *Service) createProfileShowcase(ctx context.Context, candidateId uint64)
 	}, nil
 }
 
-func (s *Service) getHangingPartner(userID uint64) (uint64, error) {
-	pas, err := s.repository.GetPendingPairAttempts(userID)
+func (s *Service) getHangingPartner(ctx context.Context, userID uint64) (uint64, error) {
+	pas, err := s.repository.GetPendingPairAttempts(ctx, userID)
 	if err != nil {
 		return 0, errors.Wrap(err, "can't get pending pair attempts")
 	}
 	for _, pa := range pas {
-		le, err := s.repository.GetLastEvent(pa.ID)
+		le, err := s.repository.GetLastEvent(ctx, pa.ID)
 		if err != nil {
 			return 0, errors.Wrap(err, "can't get last pair event")
 		}
@@ -132,22 +132,22 @@ func (s *Service) getHangingPartner(userID uint64) (uint64, error) {
 }
 
 func (s *Service) chooseCandidateAndCreateNewPair(ctx context.Context, userId uint64) (*models.ProfileShowcase, error) {
-	candidate, err := s.chooseCandidate(userId)
+	candidate, err := s.chooseCandidate(ctx, userId)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't choose candidate")
 	}
 	if candidate == 0 {
 		return nil, nil
 	}
-	pa, err := s.repository.CreatePairAttempt(userId, candidate)
+	pa, err := s.repository.CreatePairAttempt(ctx, userId, candidate)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create pair attempt")
 	}
-	err = s.repository.CreateEvent(pa.ID, models.PETypePACreated)
+	err = s.repository.CreateEvent(ctx, pa.ID, models.PETypePACreated)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create pair event")
 	}
-	err = s.repository.CreateEvent(pa.ID, models.PETypeSentToUser1)
+	err = s.repository.CreateEvent(ctx, pa.ID, models.PETypeSentToUser1)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't create pair event")
 	}
@@ -158,16 +158,16 @@ func (s *Service) chooseCandidateAndCreateNewPair(ctx context.Context, userId ui
 	return &prof, nil
 }
 
-func (s *Service) chooseCandidate(userId uint64) (uint64, error) {
-	ids, err := s.repository.GetAllValidUsers()
+func (s *Service) chooseCandidate(ctx context.Context, userId uint64) (uint64, error) {
+	ids, err := s.repository.GetAllValidUsers(ctx)
 	if err != nil {
 		return 0, errors.Wrap(err, "can't get valid users")
 	}
-	myPref, err := s.repository.GetPreferences(userId)
+	myPref, err := s.repository.GetPreferences(ctx, userId)
 	if err != nil {
 		return 0, errors.Wrap(err, "can't get preferences")
 	}
-	myProf, err := s.repository.GetProfile(userId)
+	myProf, err := s.repository.GetProfile(ctx, userId)
 	if err != nil {
 		return 0, errors.Wrap(err, "can't get profile")
 	}
@@ -176,18 +176,18 @@ func (s *Service) chooseCandidate(userId uint64) (uint64, error) {
 		if id == userId {
 			continue
 		}
-		pref, err := s.repository.GetPreferences(id)
+		pref, err := s.repository.GetPreferences(ctx, id)
 		if err != nil {
 			return 0, errors.Wrap(err, "can't get preferences")
 		}
-		prof, err := s.repository.GetProfile(id)
+		prof, err := s.repository.GetProfile(ctx, id)
 		if err != nil {
 			return 0, errors.Wrap(err, "can't get profile")
 		}
 		if !myPref.ProfileMatches(prof) || !pref.ProfileMatches(myProf) {
 			continue
 		}
-		pa, _ := s.repository.GetPendingPairAttemptByUserPair(userId, id)
+		pa, _ := s.repository.GetPendingPairAttemptByUserPair(ctx, userId, id)
 		if pa.ID != 0 {
 			continue
 		}
@@ -198,7 +198,7 @@ func (s *Service) chooseCandidate(userId uint64) (uint64, error) {
 	withDislike := []uint64{}
 	latestPaTime := map[uint64]time.Time{}
 	for _, id := range candidates {
-		pa, _ := s.repository.GetLatestPairAttemptByUserPair(userId, id)
+		pa, _ := s.repository.GetLatestPairAttemptByUserPair(ctx, userId, id)
 		if pa.ID == 0 {
 			noShows = append(noShows, id)
 			continue

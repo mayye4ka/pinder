@@ -65,9 +65,9 @@ var (
 )
 
 func (s *ServiceTestSuite) TestListChats() {
-	s.repoMock.EXPECT().GetChats(userId).Return([]models.Chat{chat}, nil)
-	s.repoMock.EXPECT().GetProfile(user2Id).Return(models.Profile{UserID: user2Id, Name: userName}, nil)
-	s.repoMock.EXPECT().GetUserPhotos(user2Id).Return([]string{photo1, photo2}, nil)
+	s.repoMock.EXPECT().GetChats(user1Ctx, userId).Return([]models.Chat{chat}, nil)
+	s.repoMock.EXPECT().GetProfile(user1Ctx, user2Id).Return(models.Profile{UserID: user2Id, Name: userName}, nil)
+	s.repoMock.EXPECT().GetUserPhotos(user1Ctx, user2Id).Return([]string{photo1, photo2}, nil)
 	s.fsMock.EXPECT().MakeProfilePhotoLink(user1Ctx, photo1).Return(photo1Link, nil)
 
 	chats, err := s.service.ListChats(user1Ctx)
@@ -77,8 +77,8 @@ func (s *ServiceTestSuite) TestListChats() {
 }
 
 func (s *ServiceTestSuite) TestListMessages() {
-	s.repoMock.EXPECT().GetChat(chat.ID).Return(chat, nil)
-	s.repoMock.EXPECT().GetMessages(chat.ID).Return([]models.Message{msgText, msgPhoto, msgVoice}, nil)
+	s.repoMock.EXPECT().GetChat(user1Ctx, chat.ID).Return(chat, nil)
+	s.repoMock.EXPECT().GetMessages(user1Ctx, chat.ID).Return([]models.Message{msgText, msgPhoto, msgVoice}, nil)
 	s.fsMock.EXPECT().MakeChatPhotoLink(user1Ctx, msgPhoto.Payload).Return(chatPhotoLink, nil)
 	s.fsMock.EXPECT().MakeChatVoiceLink(user1Ctx, msgVoice.Payload).Return(voiceLink, nil)
 
@@ -91,16 +91,16 @@ func (s *ServiceTestSuite) TestListMessages() {
 }
 
 func (s *ServiceTestSuite) TestSendMessage_ContentTypeText() {
-	s.repoMock.EXPECT().GetChat(chat.ID).Return(chat, nil)
-	s.repoMock.EXPECT().SendMessage(chat.ID, userId, models.ContentText, "text").Return(msgText, nil)
-	s.userNotifierMock.EXPECT().SendMessage(chat.User1, models.MessageSend{
+	s.repoMock.EXPECT().GetChat(user1Ctx, chat.ID).Return(chat, nil)
+	s.repoMock.EXPECT().SendMessage(user1Ctx, chat.ID, userId, models.ContentText, "text").Return(msgText, nil)
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User1, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgText.ID,
 		SentByMe:    true,
 		ContentType: models.ContentText,
 		Payload:     msgText.Payload,
 	}).Return(nil)
-	s.userNotifierMock.EXPECT().SendMessage(chat.User2, models.MessageSend{
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User2, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgText.ID,
 		SentByMe:    false,
@@ -114,19 +114,19 @@ func (s *ServiceTestSuite) TestSendMessage_ContentTypeText() {
 }
 
 func (s *ServiceTestSuite) TestSendMessage_ContentTypeVoice() {
-	s.repoMock.EXPECT().GetChat(chat.ID).Return(chat, nil)
+	s.repoMock.EXPECT().GetChat(user1Ctx, chat.ID).Return(chat, nil)
 	s.fsMock.EXPECT().SaveChatVoice(user1Ctx, voiceBytes).Return(voice, nil)
-	s.repoMock.EXPECT().SendMessage(chat.ID, userId, models.ContentVoice, voice).Return(msgVoice, nil)
+	s.repoMock.EXPECT().SendMessage(user1Ctx, chat.ID, userId, models.ContentVoice, voice).Return(msgVoice, nil)
 	s.fsMock.EXPECT().MakeChatVoiceLink(user1Ctx, voice).Return(voiceLink, nil)
 
-	s.userNotifierMock.EXPECT().SendMessage(chat.User1, models.MessageSend{
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User1, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgVoice.ID,
 		SentByMe:    true,
 		ContentType: models.ContentVoice,
 		Payload:     voiceLink,
 	}).Return(nil)
-	s.userNotifierMock.EXPECT().SendMessage(chat.User2, models.MessageSend{
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User2, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgVoice.ID,
 		SentByMe:    false,
@@ -140,19 +140,19 @@ func (s *ServiceTestSuite) TestSendMessage_ContentTypeVoice() {
 }
 
 func (s *ServiceTestSuite) TestSendMessage_ContentTypePhoto() {
-	s.repoMock.EXPECT().GetChat(chat.ID).Return(chat, nil)
+	s.repoMock.EXPECT().GetChat(user1Ctx, chat.ID).Return(chat, nil)
 	s.fsMock.EXPECT().SaveChatPhoto(user1Ctx, photoBytes).Return(chatPhoto, nil)
-	s.repoMock.EXPECT().SendMessage(chat.ID, userId, models.ContentPhoto, chatPhoto).Return(msgPhoto, nil)
+	s.repoMock.EXPECT().SendMessage(user1Ctx, chat.ID, userId, models.ContentPhoto, chatPhoto).Return(msgPhoto, nil)
 	s.fsMock.EXPECT().MakeChatPhotoLink(user1Ctx, chatPhoto).Return(chatPhotoLink, nil)
 
-	s.userNotifierMock.EXPECT().SendMessage(chat.User1, models.MessageSend{
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User1, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgPhoto.ID,
 		SentByMe:    true,
 		ContentType: models.ContentPhoto,
 		Payload:     chatPhotoLink,
 	}).Return(nil)
-	s.userNotifierMock.EXPECT().SendMessage(chat.User2, models.MessageSend{
+	s.userNotifierMock.EXPECT().SendMessage(user1Ctx, chat.User2, models.MessageSend{
 		ChatID:      chat.ID,
 		MessageID:   msgPhoto.ID,
 		SentByMe:    false,
