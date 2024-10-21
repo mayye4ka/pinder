@@ -143,7 +143,7 @@ func main() {
 	ntfcReceiver := ntfc_receive.NewNotificationReceiver(rabbit, &logger)
 
 	auth := authenticator.New(repository, &logger)
-	wsServer := ws_server.NewWsServer(auth, ntfcReceiver, config.GrpcPort)
+	wsServer := ws_server.NewWsServer(auth, ntfcReceiver, config.WsPort)
 	svc := service.New(repository, fileStorage, ntfcSender, sttTaskCreator)
 	sttResultReceiver := stt_result.NewResultReceiver(rabbit, svc, &logger)
 
