@@ -11,23 +11,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mayye4ka/pinder/internal/notifications"
+	"github.com/caarlos0/env"
+	"github.com/joho/godotenv"
+	ntfc_receive "github.com/mayye4ka/pinder/internal/notifications/receive"
+	ntfc_send "github.com/mayye4ka/pinder/internal/notifications/send"
 	repository "github.com/mayye4ka/pinder/internal/repository/db"
 	"github.com/mayye4ka/pinder/internal/repository/file_storage"
 	grpc_server "github.com/mayye4ka/pinder/internal/server/grpc-server"
 	ws_server "github.com/mayye4ka/pinder/internal/server/ws-server"
-	"github.com/mayye4ka/pinder/internal/stt"
+	stt_result "github.com/mayye4ka/pinder/internal/stt/result"
+	stt_task "github.com/mayye4ka/pinder/internal/stt/task"
 	"github.com/mayye4ka/pinder/internal/usecase/authenticator"
 	"github.com/mayye4ka/pinder/internal/usecase/service"
-	"github.com/rs/zerolog"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/caarlos0/env"
-	"github.com/joho/godotenv"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/rs/zerolog"
 	migrate "github.com/rubenv/sql-migrate"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -131,16 +132,20 @@ func main() {
 
 	fileStorage := file_storage.New(minio)
 	repository := repository.New(db, &logger)
-	sttTaskCreator, err := stt.NewTaskCreator(rabbit)
+	sttTaskCreator, err := stt_task.NewTaskCreator(rabbit, &logger)
 	if err != nil {
 		log.Fatal(err)
 	}
-	notifier := notifications.NewNotifier(rabbit)
+	ntfcSender, err := ntfc_send.NewNotificationSender(rabbit, &logger)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ntfcReceiver := ntfc_receive.NewNotificationReceiver(rabbit, &logger)
 
 	auth := authenticator.New(repository, &logger)
-	wsServer := ws_server.NewWsServer(auth, notifier, config.GrpcPort)
-	svc := service.New(repository, fileStorage, notifier, sttTaskCreator)
-	sttResultReceiver := stt.NewResultReceiver(rabbit, svc)
+	wsServer := ws_server.NewWsServer(auth, ntfcReceiver, config.GrpcPort)
+	svc := service.New(repository, fileStorage, ntfcSender, sttTaskCreator)
+	sttResultReceiver := stt_result.NewResultReceiver(rabbit, svc, &logger)
 
 	server := grpc_server.New(svc, auth, config.GrpcPort)
 
@@ -148,7 +153,7 @@ func main() {
 
 	for _, s := range []Starter{
 		wsServer,
-		notifier,
+		ntfcReceiver,
 		sttResultReceiver,
 		server,
 	} {
@@ -173,7 +178,7 @@ func main() {
 
 	for _, s := range []Stopper{
 		wsServer,
-		notifier,
+		ntfcReceiver,
 		sttResultReceiver,
 		server,
 	} {
