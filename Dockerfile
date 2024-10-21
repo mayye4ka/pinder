@@ -9,5 +9,5 @@ RUN git config --global url."https://${USER}:${TOKEN}@github.com".insteadOf "htt
 COPY go.mod go.sum ./
 RUN go mod download
 COPY ./ ./
-RUN CGO_ENABLED=0 GOOS=linux go build -o /pinder
+RUN CGO_ENABLED=0 GOOS=linux go build -o /pinder ./cmd/main.go
 CMD ["/pinder"]
