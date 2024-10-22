@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log"
 	"net/url"
 	"path/filepath"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mayye4ka/pinder/internal/errs"
 	"github.com/minio/minio-go/v7"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -22,11 +23,13 @@ const (
 
 type FileStorage struct {
 	minioClient *minio.Client
+	logger      *zerolog.Logger
 }
 
-func New(minioClient *minio.Client) *FileStorage {
+func New(minioClient *minio.Client, logger *zerolog.Logger) *FileStorage {
 	return &FileStorage{
 		minioClient: minioClient,
+		logger:      logger,
 	}
 }
 
@@ -41,7 +44,11 @@ func (fs *FileStorage) saveObj(ctx context.Context, name string, payload []byte)
 		minio.PutObjectOptions{ContentType: contentType},
 	)
 	if err != nil {
-		log.Fatalln(err)
+		fs.logger.Err(err).Msg("can't save obj")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't save obj",
+		}
 	}
 	return nil
 }
@@ -52,27 +59,47 @@ func (fs *FileStorage) getObj(ctx context.Context, name string) (string, error) 
 		name,
 		minio.GetObjectOptions{})
 	if err != nil {
-		return "", err
+		fs.logger.Err(err).Msg("can't get obj")
+		return "", &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't get obj",
+		}
 	}
 	defer obj.Close()
 	b, err := io.ReadAll(obj)
 	if err != nil {
-		return "", err
+		fs.logger.Err(err).Msg("can't read obj body")
+		return "", &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't read obj body",
+		}
 	}
 	return string(b), nil
 }
 
 func (fs *FileStorage) delObj(ctx context.Context, name string) error {
-	return fs.minioClient.RemoveObject(
+	err := fs.minioClient.RemoveObject(
 		ctx, bucket,
 		name,
 		minio.RemoveObjectOptions{ForceDelete: true})
+	if err != nil {
+		fs.logger.Err(err).Msg("can't remove obj")
+		return &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't remove obj",
+		}
+	}
+	return nil
 }
 
 func (fs *FileStorage) shareObj(ctx context.Context, name string) (string, error) {
 	url, err := fs.minioClient.PresignedGetObject(ctx, bucket, name, time.Hour*24, url.Values{})
 	if err != nil {
-		return "", err
+		fs.logger.Err(err).Msg("can't share obj")
+		return "", &errs.CodableError{
+			Code:    errs.CodeInternal,
+			Message: "can't share obj",
+		}
 	}
 	return url.String(), nil
 }

@@ -3,11 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
 	public_api "github.com/mayye4ka/pinder-api/api/go"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -44,7 +44,7 @@ func (c *ServerCtrl) Start(ctx context.Context) error {
 	public_api.RegisterPinderServer(c.grpcServer, c.server)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", c.port))
 	if err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "can't create listener for grpc server")
 	}
 	go func() {
 		<-ctx.Done()

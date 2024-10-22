@@ -185,10 +185,24 @@ func (s *WsServer) startHttpServer(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 		s.httpServer.Shutdown(ctx)
+		s.closeConnections()
 	}()
 	return s.httpServer.ListenAndServe()
 }
 
 func (s *WsServer) stopHttpServer(ctx context.Context) error {
-	return s.httpServer.Shutdown(ctx)
+	err := s.httpServer.Shutdown(ctx)
+	s.closeConnections()
+	return err
+}
+
+func (s *WsServer) closeConnections() {
+	s.connStoreMu.Lock()
+	for _, cm := range s.connStore {
+		for _, conn := range cm {
+			conn.Close()
+		}
+	}
+	s.connStore = map[uint64]map[string]*websocket.Conn{}
+	s.connStoreMu.Unlock()
 }

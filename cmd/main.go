@@ -130,7 +130,7 @@ func main() {
 	}
 	logger := zerolog.New(os.Stdout)
 
-	fileStorage := file_storage.New(minio)
+	fileStorage := file_storage.New(minio, &logger)
 	repository := repository.New(db, &logger)
 	sttTaskCreator, err := stt_task.NewTaskCreator(rabbit, &logger)
 	if err != nil {
